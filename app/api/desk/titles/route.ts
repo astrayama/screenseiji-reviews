@@ -12,7 +12,7 @@ export async function GET() {
       .from("titles")
       .select("*, franchise:franchises(*), seasons(id, number, name, episode_count, episodes(id, number, name))")
       .order("created_at", { ascending: false }),
-    db.from("reviews").select("id, title_id, season_id, episode_id, status, score, featured, publish_at"),
+    db.from("reviews").select("id, title_id, season_id, episode_id, status, score, emoji, featured, publish_at"),
     db.from("title_tags").select("title_id, tag_id"),
   ]);
   if (error) return jsonError(error.message, 500);

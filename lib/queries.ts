@@ -1,5 +1,6 @@
 import { db } from "./supabase";
 import { avg } from "./util";
+import { normalizeEmoji } from "./emoji";
 
 /* ---------- row types ---------- */
 
@@ -59,6 +60,7 @@ export type Review = {
   season_id: string | null;
   episode_id: string | null;
   score: number | null;
+  emoji: string | null;
   verdict: string | null;
   pull_quote: string | null;
   body_spoiler_free: string | null;
@@ -72,7 +74,7 @@ export type Review = {
   episode?: (Episode & { season: Season & { title: Title } }) | null;
 };
 
-export type SubScore = { category: string; score: number; sort_order: number };
+export type SubScore = { id: string; category: string; score: number; sort_order: number };
 
 /* A review resolved against its subject, ready to render. */
 export type ReviewCard = {
@@ -84,6 +86,7 @@ export type ReviewCard = {
   href: string;
   posterUrl: string | null;
   score: number | null;
+  emoji: string | null;
   verdict: string | null;
   date: string | null;
   tags: Tag[];
@@ -133,6 +136,7 @@ function resolveCard(r: Review, tagsByTitle: Map<string, Tag[]>): ReviewCard | n
     href,
     posterUrl: rootTitle.poster_url,
     score: r.score === null ? null : Number(r.score),
+    emoji: normalizeEmoji(r.emoji),
     verdict: r.verdict,
     date: r.published_at ?? r.publish_at,
     tags: tagsByTitle.get(rootTitle.id) ?? [],
@@ -169,16 +173,25 @@ export async function getVisibleReviewCards(): Promise<ReviewCard[]> {
   return cards;
 }
 
-/* score shown for a root title: film → its review; series → avg of season
-   reviews, falling back to avg of episode reviews */
-export function scoreForRootTitle(titleId: string, cards: ReviewCard[]): number | null {
-  const mine = cards.filter((c) => c.rootTitle.id === titleId && c.score !== null);
-  const film = mine.find((c) => c.review.title_id);
-  if (film) return film.score;
-  const seasons = mine.filter((c) => c.review.season_id).map((c) => c.score as number);
-  if (seasons.length) return avg(seasons);
-  const eps = mine.filter((c) => c.review.episode_id).map((c) => c.score as number);
-  return avg(eps);
+export type RootScore = { score: number | null; emoji: string | null };
+
+/* Score shown for a root title: film → its own review; series → avg of season
+   reviews, falling back to avg of episode reviews.
+   The emoji rides along ONLY on the single-film branch — an average of several
+   reviews has no single feeling, so both aggregate branches return null. */
+export function scoreForRootTitle(titleId: string, cards: ReviewCard[]): RootScore {
+  const ofTitle = cards.filter((c) => c.rootTitle.id === titleId);
+
+  // the film branch first, and before the score filter, so an emoji-only
+  // film review still surfaces its emoji
+  const film = ofTitle.find((c) => c.review.title_id);
+  if (film) return { score: film.score, emoji: film.emoji };
+
+  const scored = ofTitle.filter((c) => c.score !== null);
+  const seasons = scored.filter((c) => c.review.season_id).map((c) => c.score as number);
+  if (seasons.length) return { score: avg(seasons), emoji: null };
+  const eps = scored.filter((c) => c.review.episode_id).map((c) => c.score as number);
+  return { score: avg(eps), emoji: null };
 }
 
 /* ---------- home ---------- */
@@ -199,7 +212,7 @@ export async function getHomeData() {
   ]);
   const featured = cards.find((c) => c.review.featured) ?? cards[0] ?? null;
   const fresh = cards.filter((c) => c !== featured).slice(0, 3);
-  const ticker = cards.filter((c) => c.score !== null).slice(0, 8);
+  const ticker = cards.filter((c) => c.score !== null || c.emoji).slice(0, 8);
   return { featured, fresh, ticker, moods, rail, total: cards.length };
 }
 
@@ -273,12 +286,19 @@ export async function titleTags(titleId: string): Promise<Tag[]> {
 export async function reviewSubScores(reviewId: string): Promise<SubScore[]> {
   const { data, error } = await db()
     .from("review_subscores")
-    .select("score, category:subscore_categories(name, sort_order)")
+    .select("score, category:subscore_categories(id, name, sort_order)")
     .eq("review_id", reviewId);
   if (error) throw error;
-  return ((data ?? []) as unknown as { score: number; category: { name: string; sort_order: number } }[])
-    .map((r) => ({ category: r.category.name, score: Number(r.score), sort_order: r.category.sort_order }))
-    .sort((a, b) => b.score - a.score);
+  // Bars follow the order set in the Desk's Tags tab, not the scores.
+  // Name tiebreak covers categories created after the sort_order backfill.
+  return ((data ?? []) as unknown as { score: number; category: { id: string; name: string; sort_order: number } }[])
+    .map((r) => ({
+      id: r.category.id,
+      category: r.category.name,
+      score: Number(r.score),
+      sort_order: r.category.sort_order,
+    }))
+    .sort((a, b) => a.sort_order - b.sort_order || a.category.localeCompare(b.category));
 }
 
 async function franchiseMembers(franchiseId: string): Promise<Title[]> {
@@ -308,7 +328,7 @@ export async function getFranchisePage(slug: string) {
     getVisibleReviewCards(),
   ]);
   const memberScores = members
-    .map((m) => scoreForRootTitle(m.id, cards))
+    .map((m) => scoreForRootTitle(m.id, cards).score)
     .filter((s): s is number => s !== null);
   const tagsSeen = new Map<string, Tag>();
   for (const c of cards) {
@@ -401,14 +421,19 @@ export type ArchiveFilters = {
 
 export async function getArchive(filters: ArchiveFilters) {
   const cards = await getVisibleReviewCards();
-  const seen = new Map<string, { title: Title; tags: Tag[]; score: number | null; latest: string }>();
+  const seen = new Map<
+    string,
+    { title: Title; tags: Tag[]; score: number | null; emoji: string | null; latest: string }
+  >();
   for (const c of cards) {
     const existing = seen.get(c.rootTitle.id);
     if (!existing) {
+      const rolled = scoreForRootTitle(c.rootTitle.id, cards);
       seen.set(c.rootTitle.id, {
         title: c.rootTitle,
         tags: c.tags,
-        score: scoreForRootTitle(c.rootTitle.id, cards),
+        score: rolled.score,
+        emoji: rolled.emoji,
         latest: c.date ?? "",
       });
     } else if ((c.date ?? "") > existing.latest) {
@@ -457,11 +482,15 @@ export async function getList(slug: string) {
   const tags = await tagMap();
   return {
     list,
-    entries: list.entries.map((e) => ({
-      ...e,
-      score: scoreForRootTitle(e.title.id, cards),
-      tags: tags.get(e.title.id) ?? [],
-    })),
+    entries: list.entries.map((e) => {
+      const rolled = scoreForRootTitle(e.title.id, cards);
+      return {
+        ...e,
+        score: rolled.score,
+        emoji: rolled.emoji,
+        tags: tags.get(e.title.id) ?? [],
+      };
+    }),
   };
 }
 
@@ -474,13 +503,18 @@ export async function searchSite(q: string) {
     db().from("franchises").select("*").ilike("name", like).limit(5),
   ]);
   if (error) throw error;
-  const titleHits = new Map<string, { title: Title; tags: Tag[]; score: number | null }>();
+  const titleHits = new Map<
+    string,
+    { title: Title; tags: Tag[]; score: number | null; emoji: string | null }
+  >();
   for (const c of cards) {
     if (c.rootTitle.name.toLowerCase().includes(q.toLowerCase()) && !titleHits.has(c.rootTitle.id)) {
+      const rolled = scoreForRootTitle(c.rootTitle.id, cards);
       titleHits.set(c.rootTitle.id, {
         title: c.rootTitle,
         tags: c.tags,
-        score: scoreForRootTitle(c.rootTitle.id, cards),
+        score: rolled.score,
+        emoji: rolled.emoji,
       });
     }
   }
@@ -500,6 +534,7 @@ export async function searchSite(q: string) {
 
 export type SiteConfig = {
   critic_name?: string;
+  tagline?: string;
   bio?: string;
   how_i_score?: string;
   established?: string;
@@ -508,6 +543,7 @@ export type SiteConfig = {
   press_kit_url?: string;
   bluesky_url?: string;
   youtube_url?: string;
+  photo_url?: string;
 };
 
 export async function getSiteConfig(): Promise<SiteConfig> {

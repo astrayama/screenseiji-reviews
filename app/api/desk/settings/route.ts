@@ -3,8 +3,8 @@ import { requireDesk, jsonError } from "@/lib/deskAuth";
 import { adminDb } from "@/lib/supabase";
 
 const KEYS = [
-  "critic_name", "bio", "how_i_score", "established", "motto",
-  "contact_email", "press_kit_url", "bluesky_url", "youtube_url",
+  "critic_name", "tagline", "bio", "how_i_score", "established", "motto",
+  "contact_email", "press_kit_url", "bluesky_url", "youtube_url", "photo_url",
 ];
 
 export async function GET() {

@@ -1,11 +1,13 @@
 "use client";
 
 import { useState } from "react";
+import { Score } from "./Score";
 
 export type EpisodeRowData = {
   number: number;
   name: string | null;
   score: number | null;
+  emoji: string | null;
   verdict: string | null;
   bodyHtml: string | null; // pre-rendered markdown, or null if no full review
   isPeak: boolean;
@@ -54,11 +56,13 @@ export function EpisodeRows({ episodes }: { episodes: EpisodeRowData[] }) {
                     {e.verdict}
                   </span>
                 )}
-                {e.score !== null ? (
-                  <b style={{ font: "700 14px var(--mono)", color: "var(--amber)" }}>{e.score.toFixed(1)}</b>
-                ) : (
-                  <span className="mono-note" style={{ color: "var(--ghost)" }}>—</span>
-                )}
+                <Score
+                  score={e.score}
+                  emoji={e.emoji}
+                  variant="inline"
+                  empty="dash"
+                  style={{ fontSize: 14, fontWeight: 700 }}
+                />
                 {expandable && <span style={{ color: "var(--faint)", fontSize: 12 }}>{isOpen ? "▴" : "▾"}</span>}
               </span>
             </button>

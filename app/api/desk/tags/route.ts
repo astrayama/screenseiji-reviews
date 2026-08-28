@@ -14,7 +14,7 @@ export async function GET() {
 export async function POST(req: NextRequest) {
   const denied = await requireDesk();
   if (denied) return denied;
-  let body: { name?: string; kind?: string; color?: string };
+  let body: { name?: string; kind?: string; color?: string; sort_order?: number };
   try {
     body = await req.json();
   } catch {
@@ -23,9 +23,24 @@ export async function POST(req: NextRequest) {
   if (!body.name?.trim()) return jsonError("name required");
   const kind = body.kind === "genre" ? "genre" : "mood";
   const color = /^#[0-9a-f]{6}$/i.test(body.color ?? "") ? body.color : "#c9a8e8";
-  const { data, error } = await adminDb()
+  const db = adminDb();
+
+  // land new tags at the end of their kind rather than tying at 0
+  let sortOrder = body.sort_order;
+  if (typeof sortOrder !== "number") {
+    const { data: last } = await db
+      .from("tags")
+      .select("sort_order")
+      .eq("kind", kind)
+      .order("sort_order", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    sortOrder = (last?.sort_order ?? -1) + 1;
+  }
+
+  const { data, error } = await db
     .from("tags")
-    .insert({ name: body.name.trim(), slug: slugify(body.name), kind, color })
+    .insert({ name: body.name.trim(), slug: slugify(body.name), kind, color, sort_order: sortOrder })
     .select("*")
     .single();
   if (error) return jsonError(error.code === "23505" ? "a tag with that name exists" : error.message, 400);
@@ -35,17 +50,41 @@ export async function POST(req: NextRequest) {
 export async function PATCH(req: NextRequest) {
   const denied = await requireDesk();
   if (denied) return denied;
-  let body: { id?: string; name?: string; kind?: string; color?: string; sort_order?: number };
+  let body: {
+    id?: string;
+    name?: string;
+    kind?: string;
+    color?: string;
+    sort_order?: number;
+    order?: string[];
+  };
   try {
     body = await req.json();
   } catch {
     return jsonError("bad request");
   }
+
+  // --- bulk reorder ---
+  // Sending the whole order (rather than swapping two rows) stays correct even
+  // when sort_order values tie. Not transactional; the next reorder repairs a
+  // partial write.
+  if (Array.isArray(body.order)) {
+    if (body.id) return jsonError("send either id or order, not both");
+    const db = adminDb();
+    for (const [index, id] of body.order.entries()) {
+      const { error } = await db.from("tags").update({ sort_order: index }).eq("id", id);
+      if (error) return jsonError(error.message, 500);
+    }
+    const { data } = await db.from("tags").select("*").order("kind").order("sort_order").order("name");
+    return NextResponse.json({ tags: data ?? [] });
+  }
+
   if (!body.id) return jsonError("id required");
   const patch: Record<string, unknown> = {};
   if (body.name?.trim()) {
+    // Only the display name changes. The slug is assigned at creation and
+    // frozen, so /archive?mood=cozy keeps working after a rename.
     patch.name = body.name.trim();
-    patch.slug = slugify(body.name);
   }
   if (body.kind === "genre" || body.kind === "mood") patch.kind = body.kind;
   if (body.color && /^#[0-9a-f]{6}$/i.test(body.color)) patch.color = body.color;

@@ -5,7 +5,8 @@ import type { SubScore } from "@/lib/queries";
 
 const BAR_COLORS = ["#ffd9a8", "#ffb8d9", "#c9a8e8", "#b3e6ff", "#b8ffe3"];
 
-/* Sorted high → low; bars fill on scroll-in; skipped categories just don't appear. */
+/* Shown in the order set in the Desk's Tags tab; bars fill on scroll-in;
+   skipped categories just don't appear. */
 export function SubScoreBars({ subScores }: { subScores: SubScore[] }) {
   const ref = useRef<HTMLDivElement>(null);
 
@@ -30,10 +31,12 @@ export function SubScoreBars({ subScores }: { subScores: SubScore[] }) {
   return (
     <div ref={ref} className="bars gl col" style={{ padding: 16, gap: 9 }}>
       <span className="label">Sub-scores</span>
-      {subScores.map((s, i) => {
-        const color = BAR_COLORS[i % BAR_COLORS.length];
+      {subScores.map((s) => {
+        // keyed to the category's own position, so a category keeps the same
+        // color on every review rather than shifting with its neighbours
+        const color = BAR_COLORS[s.sort_order % BAR_COLORS.length];
         return (
-          <div className="row" key={s.category}>
+          <div className="row" key={s.id}>
             <span
               style={{
                 width: 130,

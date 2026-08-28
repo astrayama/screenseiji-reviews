@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useState } from "react";
 import { PosterImg } from "./PosterImg";
+import { Score } from "./Score";
 
 export type ShelfItem = {
   id: string;
@@ -11,6 +12,7 @@ export type ShelfItem = {
   posterUrl: string | null;
   href: string | null; // null = unreviewed (dimmed)
   score: number | null;
+  emoji?: string | null;
   releaseOrder: number;
 };
 
@@ -52,13 +54,15 @@ export function FranchiseShelf({ items }: { items: ShelfItem[] }) {
                 </div>
               )}
               <b style={{ fontSize: 13, color: m.href ? "var(--bright)" : "var(--faint)" }}>{m.name}</b>
-              <span className="mono-note" style={{ fontSize: 10.5 }}>
-                {m.year ?? "—"} ·{" "}
-                {m.score !== null ? (
-                  <b style={{ color: "var(--amber)" }}>{m.score.toFixed(1)}</b>
-                ) : (
-                  "—"
-                )}
+              <span className="row mono-note" style={{ fontSize: 10.5, gap: 5 }}>
+                {m.year ?? "—"} ·
+                <Score
+                  score={m.score}
+                  emoji={m.emoji}
+                  variant="inline"
+                  empty="dash"
+                  style={{ fontSize: 11 }}
+                />
               </span>
             </div>
           );

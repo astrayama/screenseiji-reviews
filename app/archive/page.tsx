@@ -2,6 +2,7 @@ import Link from "next/link";
 import type { Metadata } from "next";
 import { getArchive, titleHref, ArchiveFilters } from "@/lib/queries";
 import { PosterImg } from "@/components/PosterImg";
+import { Score } from "@/components/Score";
 
 export const dynamic = "force-dynamic";
 
@@ -125,9 +126,9 @@ export default async function ArchivePage({ searchParams }: Props) {
               <Link key={i.title.id} href={titleHref(i.title)} className="tiltable col" style={{ gap: 6 }}>
                 <PosterImg src={i.title.poster_url} alt={i.title.name} />
                 <b style={{ fontSize: 13, color: "var(--bright)", lineHeight: 1.3 }}>{i.title.name}</b>
-                <span className="mono-note" style={{ fontSize: 10.5 }}>
-                  {i.title.year ?? ""}{" "}
-                  {i.score !== null && <b style={{ color: "var(--amber)" }}>{i.score.toFixed(1)}</b>}
+                <span className="row mono-note" style={{ fontSize: 10.5, gap: 6 }}>
+                  {i.title.year ?? ""}
+                  <Score score={i.score} emoji={i.emoji} variant="inline" style={{ fontSize: 11 }} />
                 </span>
               </Link>
             ))}

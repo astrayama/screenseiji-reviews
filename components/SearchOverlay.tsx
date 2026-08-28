@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState, useCallback, useMemo } from "react";
 import { useRouter } from "next/navigation";
+import { Score } from "./Score";
 
 type Results = {
   franchises: { franchise: { slug: string; name: string }; count: number }[];
@@ -12,6 +13,7 @@ type TitleHit = {
   title: { slug: string; name: string; year: number | null; kind: string; poster_url: string | null };
   tags: { id: string; name: string; color: string }[];
   score: number | null;
+  emoji: string | null;
 };
 
 /* Instant as you type · ↑↓ + enter · amber ring = keyboard focus · ESC to close */
@@ -184,11 +186,12 @@ export function SearchOverlay({ onClose }: { onClose: () => void }) {
                               {t.name}
                             </span>
                           ))}
-                          {h.score !== null && (
-                            <span className="sc" style={{ marginLeft: "auto", fontSize: 11 }}>
-                              {h.score.toFixed(1)}
-                            </span>
-                          )}
+                          <Score
+                            score={h.score}
+                            emoji={h.emoji}
+                            variant="pill"
+                            style={{ marginLeft: "auto", fontSize: 11 }}
+                          />
                         </div>
                       );
                     })}

@@ -125,6 +125,51 @@ a.chip--tag:hover, button.chip--tag:hover, .chip--tag.is-active {
 }
 .sc--empty { border-style: dashed; border-color: var(--ghost); color: var(--faint); }
 
+/* ---------- emoji score ---------- */
+/* The emoji leads; the number lives beneath it, quieter. Reviews with no
+   emoji fall through to the plain .sc / .verdict-score treatments above. */
+
+.score { display: inline-flex; align-items: center; }
+.score--stack { flex-direction: column; gap: 1px; line-height: 1; }
+.score--row { flex-direction: row; gap: 5px; }
+
+.score-emoji {
+  font-size: var(--emoji-size, 1.45em);
+  line-height: 1;
+  /* explicit stack — system-ui alone renders monochrome or tofu on some
+     Linux/Windows builds */
+  font-family: "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", var(--sans);
+  filter: drop-shadow(0 1px 7px rgba(255, 217, 168, 0.28));
+}
+
+.score-num {
+  font: 600 0.72em var(--mono);
+  color: var(--amber);
+  opacity: 0.82;
+  letter-spacing: 0.4px;
+  line-height: 1;
+}
+
+/* bare inline numbers (no emoji) keep the amber mono they had before */
+.score--inline { font: 600 13px var(--mono); color: var(--amber); vertical-align: middle; }
+.score--inline .score-emoji { font-size: 1.3em; }
+
+.score--verdict .score-emoji { font-size: 58px; }
+.score--verdict .score-num { font: 700 24px var(--mono); opacity: 0.88; }
+
+/* a two-line pill needs a little more room than .sc's 3px */
+.sc.has-emoji { padding: 5px 11px; line-height: 1; }
+
+.sr-only {
+  position: absolute;
+  width: 1px; height: 1px;
+  padding: 0; margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+
 /* ---------- glass card ---------- */
 
 .gl {
@@ -373,6 +418,11 @@ textarea.input { font-family: var(--sans); line-height: 1.5; resize: vertical; }
   top: 10px;
   right: 14px;
   z-index: 50;
+  gap: 8px;
+  padding: 5px 12px;
+  border: 1.5px solid var(--amber);
+  border-radius: 999px;
+  white-space: nowrap;
   background: var(--bg-2);
   box-shadow: 0 4px 18px rgba(0, 0, 0, 0.4);
   opacity: 0;

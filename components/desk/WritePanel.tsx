@@ -4,6 +4,9 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { marked } from "marked";
 import { api, Library, DeskTag, DeskTitle, DeskReview, Category } from "./api";
 import { QueueSidebar } from "./QueueSidebar";
+import { Poster, UploadPoster } from "./shared";
+import { EmojiPicker } from "./EmojiPicker";
+import { Score } from "../Score";
 
 type Subject =
   | { kind: "title"; id: string }
@@ -241,40 +244,6 @@ function PickOrAdd({
   );
 }
 
-function Poster({ url, w }: { url: string | null; w: number }) {
-  return url ? (
-    // eslint-disable-next-line @next/next/no-img-element
-    <img src={url} alt="" style={{ width: w, aspectRatio: "2/3", objectFit: "cover", borderRadius: 4, flex: "none" }} />
-  ) : (
-    <span style={{ width: w, aspectRatio: "2/3", borderRadius: 4, background: "var(--panel)", flex: "none" }} />
-  );
-}
-
-function UploadPoster({ titleId, onDone }: { titleId: string; onDone: () => Promise<void> }) {
-  const [busy, setBusy] = useState(false);
-  return (
-    <label className="chip" style={{ cursor: "pointer" }}>
-      {busy ? "uploading…" : "poster"}
-      <input
-        type="file"
-        accept="image/jpeg,image/png,image/webp"
-        style={{ display: "none" }}
-        onChange={async (e) => {
-          const file = e.target.files?.[0];
-          if (!file) return;
-          setBusy(true);
-          const form = new FormData();
-          form.append("file", file);
-          form.append("title_id", titleId);
-          await fetch("/api/desk/upload-poster", { method: "POST", body: form });
-          await onDone();
-          setBusy(false);
-        }}
-      />
-    </label>
-  );
-}
-
 function ManualAdd({ onCreated }: { onCreated: (t: DeskTitle) => void }) {
   const [kind, setKind] = useState<"film" | "series">("film");
   const [name, setName] = useState("");
@@ -431,7 +400,7 @@ function ReviewEditor({
 }) {
   const [review, setReview] = useState<DeskReview | null>(null);
   const [subScores, setSubScores] = useState<{ category_id: string; score: number }[]>([]);
-  const [form, setForm] = useState({ score: "", verdict: "", pull_quote: "", body_spoiler_free: "", body_spoilers: "" });
+  const [form, setForm] = useState({ score: "", emoji: "", verdict: "", pull_quote: "", body_spoiler_free: "", body_spoilers: "" });
   const [publishAt, setPublishAt] = useState("");
   const [status, setStatus] = useState("");
   const [previewOpen, setPreviewOpen] = useState(false);
@@ -451,6 +420,7 @@ function ReviewEditor({
       setSubScores(subs.map((s) => ({ category_id: s.category_id, score: Number(s.score) })));
       setForm({
         score: full.score !== null ? String(full.score) : "",
+        emoji: full.emoji ?? "",
         verdict: full.verdict ?? "",
         pull_quote: full.pull_quote ?? "",
         body_spoiler_free: full.body_spoiler_free ?? "",
@@ -473,6 +443,7 @@ function ReviewEditor({
   function fieldPayload() {
     return {
       score: form.score === "" ? null : Math.min(10, Math.max(0, Number(form.score))),
+      emoji: form.emoji || null,
       verdict: form.verdict || null,
       pull_quote: form.pull_quote || null,
       body_spoiler_free: form.body_spoiler_free || null,
@@ -572,9 +543,9 @@ function ReviewEditor({
       <div className="col" style={{ gap: 8 }}>
         <div className="row between">
           <span className="label" style={{ fontSize: 10 }}>Score + sub-scores</span>
-          <span className="mono-note" style={{ fontSize: 10 }}>auto-sorted high → low on the site ✓</span>
+          <span className="mono-note" style={{ fontSize: 10 }}>sub-scores shown in your Tags-tab order ✓</span>
         </div>
-        <div className="row">
+        <div className="row" style={{ flexWrap: "wrap" }}>
           <b style={{ width: 120, fontSize: 13, color: "var(--bright)" }}>Overall</b>
           <input
             className="input"
@@ -583,8 +554,29 @@ function ReviewEditor({
             value={form.score}
             onChange={(e) => setForm({ ...form, score: e.target.value.replace(/[^\d.]/g, "") })}
           />
+          <EmojiPicker
+            value={form.emoji || null}
+            onChange={(v) => setForm({ ...form, emoji: v ?? "" })}
+          />
         </div>
-        {subScores.map((s) => {
+        {/* exactly what the site will show */}
+        <div className="row gl" style={{ padding: "8px 12px", gap: 12, alignSelf: "flex-start" }}>
+          <span className="mono-note" style={{ fontSize: 10 }}>on the site:</span>
+          <Score
+            score={form.score === "" ? null : Number(form.score)}
+            emoji={form.emoji || null}
+            variant="verdict"
+            empty="dash"
+          />
+        </div>
+        {/* mirror the site: rows follow the category order, not insertion order */}
+        {[...subScores]
+          .sort(
+            (a, b) =>
+              categories.findIndex((c) => c.id === a.category_id) -
+              categories.findIndex((c) => c.id === b.category_id)
+          )
+          .map((s) => {
           const cat = categories.find((c) => c.id === s.category_id);
           return (
             <div className="row" key={s.category_id}>

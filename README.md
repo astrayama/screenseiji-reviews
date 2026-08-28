@@ -5,7 +5,7 @@ One critic, every screen. A fully functional review site — dusk-glass skin, am
 **What's inside**
 
 - **Public site** — mood-first home with featured pick + "Now Reviewing" rail, film review posts (verdict count-up, optional sub-scores, spoiler-free body, blurred spoiler zone), franchise hubs, series hubs with season accordions, season pages with inline episode reviews, filterable archive, lists & rankings, instant search overlay (↑↓ + Enter), about page, RSS feed, sitemap, Review/BreadcrumbList/Person schema for SEO.
-- **Sage Desk** (`/desk`) — private, password-gated, noindex. Quick-add titles from TMDB (metadata, posters, genres, and franchises autofill) or add manually, write/schedule/publish reviews, manage tags & sub-score categories, curate the Now Reviewing rail and lists, see 30-day view stats, manage subscribers, and send newsletter dispatches.
+- **Sage Desk** (`/desk`) — private, password-gated, noindex, with a brute-force brake on the login. Quick-add titles from TMDB (metadata, posters, genres, and franchises autofill) or add manually, write/schedule/publish reviews, manage the **Library** (edit any title, swap posters, nest titles into franchises and reorder them, delete things), manage tags & sub-score categories, curate the Now Reviewing rail and lists, set your About identity (name, tagline, bio, photo), see 30-day view stats, manage subscribers, and send newsletter dispatches.
 - **Backend** — Supabase (Postgres + storage) with row-level security: drafts are invisible to the public at the database level. Newsletter sending via Resend. No dummy data — the site starts empty and fills as you write.
 
 ---
@@ -45,19 +45,11 @@ cd ~/screen-sage && npm run dev -- --port 3210
 
 ---
 
-## Part 2 — The TMDB key (free, ~5 min) → metadata autofill
+## Part 2 — The TMDB key ✅ already done
 
-This is what makes quick-add magic: type "Dune", get the poster, year, runtime, genres, and the franchise detected automatically.
+Your TMDB read access token is installed in `.env.local`, so quick-add autofills locally: type "Dune", get the poster, year, runtime, genres, and the franchise detected automatically.
 
-1. Go to https://www.themoviedb.org/signup → make a free account
-2. Verify your email
-3. Go to https://www.themoviedb.org/settings/api → click **Create** → choose **Developer**
-4. Accept the terms. For the form: type of use "Personal", describe it as "personal movie review website" — the URL can be anything for now
-5. Copy the **API Key** it shows you
-6. Open `~/screen-sage/.env.local` and paste it after `TMDB_API_KEY=`
-7. Restart the dev server (Ctrl-C, then `npm run dev -- --port 3210` again)
-
-Done — quick-add now autofills, and imported films that belong to a saga get their franchise page automatically.
+**One thing to remember for Part 3:** when you set up Vercel, paste the same token as the `TMDB_API_KEY` environment variable (it's in `~/screen-sage/.env.local` if you need to copy it again).
 
 ---
 

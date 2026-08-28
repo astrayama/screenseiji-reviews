@@ -6,6 +6,7 @@ import { renderMarkdown } from "@/lib/markdown";
 import { TagChip } from "@/components/TagChip";
 import { EpisodeRows, EpisodeRowData } from "@/components/EpisodeRows";
 import { SubScoreBars } from "@/components/SubScoreBars";
+import { Score } from "@/components/Score";
 import { SpoilerZone } from "@/components/SpoilerZone";
 import { Reveal } from "@/components/Reveal";
 
@@ -36,6 +37,7 @@ export default async function SeasonPage({ params }: Props) {
     number: e.episode.number,
     name: e.episode.name,
     score: e.card?.score ?? null,
+    emoji: e.card?.emoji ?? null,
     verdict: e.card?.review.verdict ?? null,
     bodyHtml: e.card?.review.body_spoiler_free
       ? renderMarkdown(e.card.review.body_spoiler_free)
@@ -69,11 +71,13 @@ export default async function SeasonPage({ params }: Props) {
             {entry.season.episode_count && <span className="chip">{entry.season.episode_count} eps</span>}
           </div>
         </div>
-        {seasonReview?.score != null ? (
-          <span className="sc" style={{ fontSize: 15 }}>{seasonReview.score.toFixed(1)}</span>
-        ) : (
-          <span className="sc sc--empty">—</span>
-        )}
+        <Score
+          score={seasonReview?.score ?? null}
+          emoji={seasonReview?.emoji ?? null}
+          variant="pill"
+          empty="dash"
+          style={{ fontSize: 15 }}
+        />
       </header>
 
       <hr className="hr" />

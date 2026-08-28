@@ -4,6 +4,7 @@ import { Ticker } from "@/components/Ticker";
 import { TagChip } from "@/components/TagChip";
 import { PosterImg } from "@/components/PosterImg";
 import { NewsletterBar } from "@/components/NewsletterBar";
+import { Score } from "@/components/Score";
 import { Reveal } from "@/components/Reveal";
 
 export const dynamic = "force-dynamic";
@@ -50,7 +51,7 @@ export default async function HomePage() {
             )}
             <div className="row between" style={{ marginTop: "auto", paddingTop: 10 }}>
               <span className="mono-note">read the review →</span>
-              {featured.score !== null && <span className="sc">{featured.score.toFixed(1)}</span>}
+              <Score score={featured.score} emoji={featured.emoji} variant="pill" />
             </div>
           </div>
         ) : (
@@ -134,11 +135,7 @@ export default async function HomePage() {
                       </span>
                     ))}
                   </div>
-                  {c.score !== null && (
-                    <span style={{ font: "600 13px var(--mono)", color: "var(--amber)" }}>
-                      {c.score.toFixed(1)}
-                    </span>
-                  )}
+                  <Score score={c.score} emoji={c.emoji} variant="inline" />
                 </Link>
               ))}
             </div>

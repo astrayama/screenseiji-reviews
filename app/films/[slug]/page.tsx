@@ -6,7 +6,8 @@ import { renderMarkdown } from "@/lib/markdown";
 import { fmtRuntime, fmtDate } from "@/lib/util";
 import { TagChip } from "@/components/TagChip";
 import { PosterImg } from "@/components/PosterImg";
-import { CountUpScore } from "@/components/CountUpScore";
+import { Score } from "@/components/Score";
+import { normalizeEmoji } from "@/lib/emoji";
 import { SubScoreBars } from "@/components/SubScoreBars";
 import { SpoilerZone } from "@/components/SpoilerZone";
 import { NewsletterBar } from "@/components/NewsletterBar";
@@ -34,6 +35,7 @@ export default async function FilmPage({ params }: Props) {
   if (!data || !data.review) notFound();
   const { title, review, tags, subScores, siblings } = data;
   const score = review.score === null ? null : Number(review.score);
+  const emoji = normalizeEmoji(review.emoji);
   const spoilerFreeHtml = renderMarkdown(review.body_spoiler_free);
   const spoilerHtml = review.body_spoilers ? renderMarkdown(review.body_spoilers) : null;
   const runtime = fmtRuntime(title.runtime_minutes);
@@ -67,7 +69,7 @@ export default async function FilmPage({ params }: Props) {
     <article className="wrap col" style={{ gap: 22, maxWidth: 780 }}>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbLd) }} />
-      {score !== null && <MiniScore score={score} name={title.name} />}
+      {(score !== null || emoji) && <MiniScore score={score} emoji={emoji} name={title.name} />}
 
       <nav className="crumb" aria-label="Breadcrumb">
         <Link href="/archive?type=film">Films</Link>
@@ -114,10 +116,9 @@ export default async function FilmPage({ params }: Props) {
             </p>
           )}
         </div>
-        {score !== null && (
+        {(score !== null || emoji) && (
           <div className="col" style={{ alignItems: "center", gap: 2, flex: "none" }}>
-            <CountUpScore score={score} className="verdict-score" />
-            <span className="mono-note" style={{ fontSize: 10 }}>/ 10</span>
+            <Score score={score} emoji={emoji} variant="verdict" countUp />
           </div>
         )}
       </section>

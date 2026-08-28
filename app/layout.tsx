@@ -3,6 +3,7 @@ import { Cormorant_Garamond } from "next/font/google";
 import Link from "next/link";
 import { SiteHeader } from "@/components/SiteHeader";
 import { ViewTracker } from "@/components/ViewTracker";
+import { getSiteConfig } from "@/lib/queries";
 import "./globals.css";
 
 const cormorant = Cormorant_Garamond({
@@ -14,16 +15,28 @@ const cormorant = Cormorant_Garamond({
 
 const SITE_URL = process.env.SITE_URL ?? "http://localhost:3000";
 
-export const metadata: Metadata = {
-  metadataBase: new URL(SITE_URL),
-  title: {
-    default: "Screen Sage — one critic, every screen",
-    template: "%s · Screen Sage",
-  },
-  description:
-    "Film and series reviews from a single voice. No algorithms, one sage.",
-  alternates: { types: { "application/rss+xml": "/feed.xml" } },
-};
+export async function generateMetadata(): Promise<Metadata> {
+  let tagline = "one critic, every screen";
+  let description = "Film and series reviews from a single voice. No algorithms, one sage.";
+  try {
+    const cfg = await getSiteConfig();
+    if (cfg.tagline) {
+      tagline = cfg.tagline;
+      description = cfg.tagline;
+    }
+  } catch {
+    /* metadata must never take the site down */
+  }
+  return {
+    metadataBase: new URL(SITE_URL),
+    title: {
+      default: `Screen Sage — ${tagline}`,
+      template: "%s · Screen Sage",
+    },
+    description,
+    alternates: { types: { "application/rss+xml": "/feed.xml" } },
+  };
+}
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (

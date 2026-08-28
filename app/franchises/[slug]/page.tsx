@@ -5,6 +5,7 @@ import { getFranchisePage, scoreForRootTitle, titleHref } from "@/lib/queries";
 import { TagChip } from "@/components/TagChip";
 import { PosterImg } from "@/components/PosterImg";
 import { FranchiseShelf } from "@/components/FranchiseShelf";
+import { Score } from "@/components/Score";
 import { Reveal } from "@/components/Reveal";
 
 export const dynamic = "force-dynamic";
@@ -28,7 +29,7 @@ export default async function FranchisePage({ params }: Props) {
   const { franchise, members, cards, average, tags, reviews } = data;
 
   const shelfItems = members.map((m, i) => {
-    const score = scoreForRootTitle(m.id, cards);
+    const rolled = scoreForRootTitle(m.id, cards);
     const reviewed = cards.some((c) => c.rootTitle.id === m.id);
     return {
       id: m.id,
@@ -36,7 +37,8 @@ export default async function FranchisePage({ params }: Props) {
       year: m.year,
       posterUrl: m.poster_url,
       href: reviewed ? titleHref(m) : null,
-      score,
+      score: rolled.score,
+      emoji: rolled.emoji,
       releaseOrder: m.franchise_order ?? i + 1,
     };
   });
@@ -93,7 +95,7 @@ export default async function FranchisePage({ params }: Props) {
                     </div>
                   </div>
                 </div>
-                {c.score !== null && <span className="sc" style={{ fontSize: 12 }}>{c.score.toFixed(1)}</span>}
+                <Score score={c.score} emoji={c.emoji} variant="pill" style={{ fontSize: 12 }} />
               </Link>
             ))
           ) : (

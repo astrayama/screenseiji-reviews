@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { getList, titleHref } from "@/lib/queries";
 import { PosterImg } from "@/components/PosterImg";
+import { Score } from "@/components/Score";
 
 export const dynamic = "force-dynamic";
 
@@ -63,9 +64,12 @@ export default async function ListPage({ params }: Props) {
                 </div>
                 {e.blurb && <p className="mono-note" style={{ margin: 0 }}>{e.blurb}</p>}
               </div>
-              {e.score !== null && (
-                <span className="sc" style={{ fontSize: 12, flex: "none" }}>{e.score.toFixed(1)}</span>
-              )}
+              <Score
+                score={e.score}
+                emoji={e.emoji}
+                variant="pill"
+                style={{ fontSize: 12, flex: "none" }}
+              />
             </Link>
           ))}
         </div>

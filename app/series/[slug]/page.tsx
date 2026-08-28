@@ -32,10 +32,11 @@ export default async function SeriesPage({ params }: Props) {
     number: s.season.number,
     episodeCount: s.season.episode_count,
     score: s.seasonReview?.score ?? null,
+    emoji: s.seasonReview?.emoji ?? null,
     reviewingNow: !s.seasonReview && s.episodeCards.length > 0,
     episodeChips: s.episodeCards
-      .filter((c) => c.score !== null)
-      .map((c) => ({ label: `E${c.episodeNumber}`, score: c.score as number })),
+      .filter((c) => c.score !== null || c.emoji)
+      .map((c) => ({ label: `E${c.episodeNumber}`, score: c.score, emoji: c.emoji })),
     href: `/series/${title.slug}/seasons/${s.season.number}`,
   }));
 

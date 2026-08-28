@@ -6,10 +6,17 @@ import { Reveal } from "@/components/Reveal";
 
 export const dynamic = "force-dynamic";
 
-export const metadata: Metadata = {
-  title: "About the critic",
-  description: "Who the Sage is, and how the scores work.",
-};
+export async function generateMetadata(): Promise<Metadata> {
+  try {
+    const cfg = await getSiteConfig();
+    return {
+      title: "About the critic",
+      description: cfg.tagline || "Who the Sage is, and how the scores work.",
+    };
+  } catch {
+    return { title: "About the critic" };
+  }
+}
 
 export default async function AboutPage() {
   const [cfg, cards] = await Promise.all([getSiteConfig(), getVisibleReviewCards()]);
@@ -20,6 +27,7 @@ export default async function AboutPage() {
     "@type": "Person",
     name,
     ...(cfg.bio ? { description: cfg.bio } : {}),
+    ...(cfg.photo_url ? { image: cfg.photo_url } : {}),
     url: "/about",
   };
 
@@ -29,21 +37,52 @@ export default async function AboutPage() {
       <nav className="crumb">About</nav>
 
       <header className="row" style={{ gap: 22, alignItems: "flex-start" }}>
-        {/* abstract mark — no face */}
-        <div
-          aria-hidden="true"
-          style={{
-            width: 96,
-            height: 96,
-            flex: "none",
-            borderRadius: "50%",
-            background: "linear-gradient(140deg, #4a3f7e, #8a6a7e)",
-            border: "1.5px solid var(--amber)",
-            boxShadow: "0 0 30px rgba(255,217,168,.25)",
-          }}
-        />
+        {cfg.photo_url ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={cfg.photo_url}
+            alt={name}
+            style={{
+              width: 96,
+              height: 96,
+              flex: "none",
+              borderRadius: "50%",
+              objectFit: "cover",
+              border: "1.5px solid var(--amber)",
+              boxShadow: "0 0 30px rgba(255,217,168,.25)",
+            }}
+          />
+        ) : (
+          /* abstract mark — until a photo is chosen */
+          <div
+            aria-hidden="true"
+            style={{
+              width: 96,
+              height: 96,
+              flex: "none",
+              borderRadius: "50%",
+              background: "linear-gradient(140deg, #4a3f7e, #8a6a7e)",
+              border: "1.5px solid var(--amber)",
+              boxShadow: "0 0 30px rgba(255,217,168,.25)",
+            }}
+          />
+        )}
         <div className="col" style={{ gap: 8 }}>
           <h1 className="ttl" style={{ fontSize: "clamp(28px, 4vw, 38px)" }}>{name}</h1>
+          {cfg.tagline && (
+            <p
+              style={{
+                margin: 0,
+                fontFamily: "var(--serif)",
+                fontStyle: "italic",
+                fontWeight: 600,
+                fontSize: 18,
+                color: "var(--amber)",
+              }}
+            >
+              {cfg.tagline}
+            </p>
+          )}
           {cfg.bio ? (
             <div className="prose" style={{ fontSize: 17.5 }} dangerouslySetInnerHTML={{ __html: renderMarkdown(cfg.bio) }} />
           ) : (

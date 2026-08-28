@@ -4,13 +4,14 @@ import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { api, Library, DeskTag, Category } from "./api";
 import { WritePanel } from "./WritePanel";
+import { LibraryPanel } from "./LibraryPanel";
 import { TagsPanel } from "./TagsPanel";
 import { RailPanel } from "./RailPanel";
 import { ListsPanel } from "./ListsPanel";
 import { AudiencePanel } from "./AudiencePanel";
 import { SettingsPanel } from "./SettingsPanel";
 
-const TABS = ["Write", "Tags", "Rail", "Lists", "Audience", "Settings"] as const;
+const TABS = ["Write", "Library", "Tags", "Rail", "Lists", "Audience", "Settings"] as const;
 export type DeskTab = (typeof TABS)[number];
 
 export function DeskApp() {
@@ -95,6 +96,7 @@ export function DeskApp() {
           {tab === "Write" && (
             <WritePanel library={library} tags={tags} categories={categories} onChanged={reload} />
           )}
+          {tab === "Library" && <LibraryPanel library={library} onChanged={reload} />}
           {tab === "Tags" && <TagsPanel tags={tags} categories={categories} onChanged={reload} />}
           {tab === "Rail" && <RailPanel library={library} />}
           {tab === "Lists" && <ListsPanel library={library} />}

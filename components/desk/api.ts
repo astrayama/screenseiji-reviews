@@ -47,6 +47,7 @@ export type DeskTitle = {
   poster_url: string | null;
   status_text: string | null;
   franchise_id: string | null;
+  franchise_order: number | null;
   franchise: { id: string; name: string; slug: string } | null;
   seasons: DeskSeason[];
 };
@@ -58,6 +59,7 @@ export type DeskReviewLite = {
   episode_id: string | null;
   status: string;
   score: number | null;
+  emoji: string | null;
   featured: boolean;
   publish_at: string | null;
 };

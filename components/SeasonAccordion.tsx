@@ -2,13 +2,15 @@
 
 import Link from "next/link";
 import { useState } from "react";
+import { Score } from "./Score";
 
 export type SeasonRowData = {
   number: number;
   episodeCount: number | null;
   score: number | null;
+  emoji: string | null;
   reviewingNow: boolean;
-  episodeChips: { label: string; score: number }[];
+  episodeChips: { label: string; score: number | null; emoji: string | null }[];
   href: string;
 };
 
@@ -43,11 +45,13 @@ export function SeasonAccordion({ seasons }: { seasons: SeasonRowData[] }) {
                 )}
               </span>
               <span className="row">
-                {s.score !== null ? (
-                  <span className="sc" style={{ fontSize: 12 }}>{s.score.toFixed(1)}</span>
-                ) : (
-                  <span className="sc sc--empty" style={{ fontSize: 12 }}>—</span>
-                )}
+                <Score
+                  score={s.score}
+                  emoji={s.emoji}
+                  variant="pill"
+                  empty="dash"
+                  style={{ fontSize: 12 }}
+                />
                 <span style={{ color: isOpen ? "var(--amber)" : "var(--faint)" }}>{isOpen ? "▴" : "▾"}</span>
               </span>
             </button>
@@ -59,7 +63,8 @@ export function SeasonAccordion({ seasons }: { seasons: SeasonRowData[] }) {
                     className="chip chip--tag"
                     style={{ ["--c" as string]: "var(--amber)" }}
                   >
-                    {e.label} {e.score.toFixed(1)}
+                    {e.label}
+                    <Score score={e.score} emoji={e.emoji} variant="inline" layout="row" style={{ fontSize: 11 }} />
                   </span>
                 ))}
                 <Link className="mono-note" href={s.href} style={{ alignSelf: "center" }}>

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireDesk, jsonError } from "@/lib/deskAuth";
 import { adminDb } from "@/lib/supabase";
+import { clampEmoji, normalizeEmoji } from "@/lib/emoji";
 
 const SUBJECTS = ["title_id", "season_id", "episode_id"] as const;
 
@@ -74,8 +75,18 @@ export async function PATCH(req: NextRequest) {
   const db = adminDb();
 
   const patch: Record<string, unknown> = {};
-  const allowed = ["score", "verdict", "pull_quote", "body_spoiler_free", "body_spoilers", "publish_at"];
+  const allowed = ["score", "emoji", "verdict", "pull_quote", "body_spoiler_free", "body_spoilers", "publish_at"];
   for (const k of allowed) if (k in rest) patch[k] = rest[k];
+
+  if ("emoji" in patch) {
+    // Array.from, never String.slice — slicing by UTF-16 unit bisects a
+    // surrogate pair and stores half an emoji.
+    const raw = patch.emoji;
+    patch.emoji =
+      typeof raw === "string"
+        ? clampEmoji(normalizeEmoji(raw) ?? "", 16) || null
+        : null;
+  }
 
   if (action === "publish") {
     patch.status = "published";
