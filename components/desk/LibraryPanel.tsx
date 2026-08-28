@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+
 import { api, Library, DeskTitle } from "./api";
 import { Poster, UploadPoster } from "./shared";
 
@@ -24,10 +25,17 @@ export function LibraryPanel({
   const [franchises, setFranchises] = useState<Franchise[]>([]);
   const [openId, setOpenId] = useState<string | null>(null);
   const [filter, setFilter] = useState("");
+  const [loadError, setLoadError] = useState("");
 
   const loadFranchises = useCallback(async () => {
-    const { franchises } = await api<{ franchises: Franchise[] }>("/api/desk/franchises");
-    setFranchises(franchises);
+    try {
+      const { franchises } = await api<{ franchises: Franchise[] }>("/api/desk/franchises");
+      setFranchises(franchises);
+      setLoadError("");
+    } catch (e) {
+      // a silent failure here would look like "I have no franchises"
+      setLoadError(e instanceof Error ? e.message : "couldn't load franchises");
+    }
   }, []);
 
   useEffect(() => {
@@ -78,6 +86,7 @@ export function LibraryPanel({
       {library.titles.length === 0 && (
         <p className="mono-note">nothing here yet — add titles from the Write tab</p>
       )}
+      {loadError && <p className="mono-note" style={{ color: "var(--pink)" }}>{loadError}</p>}
 
       <div className="col" style={{ gap: 8 }}>
         {shown.map((t) => (
@@ -118,24 +127,8 @@ function TitleRow({
   onChanged: () => Promise<void>;
   onFranchisesChanged: () => Promise<void>;
 }) {
-  const [form, setForm] = useState({
-    name: title.name,
-    year: title.year ? String(title.year) : "",
-    runtime: title.runtime_minutes ? String(title.runtime_minutes) : "",
-    status_text: title.status_text ?? "",
-    synopsis: title.synopsis ?? "",
-    franchise_id: title.franchise_id ?? "",
-    franchise_order: title.franchise_order ? String(title.franchise_order) : "",
-  });
-  const [newFranchise, setNewFranchise] = useState("");
-  const [status, setStatus] = useState("");
-  const [saving, setSaving] = useState(false);
-
-  // refresh the form when a newer copy of the title arrives
-  const [prevTitle, setPrevTitle] = useState(title);
-  if (prevTitle !== title) {
-    setPrevTitle(title);
-    setForm({
+  const serverForm = useMemo(
+    () => ({
       name: title.name,
       year: title.year ? String(title.year) : "",
       runtime: title.runtime_minutes ? String(title.runtime_minutes) : "",
@@ -143,7 +136,24 @@ function TitleRow({
       synopsis: title.synopsis ?? "",
       franchise_id: title.franchise_id ?? "",
       franchise_order: title.franchise_order ? String(title.franchise_order) : "",
-    });
+    }),
+    [title]
+  );
+
+  const [form, setForm] = useState(serverForm);
+  const [newFranchise, setNewFranchise] = useState("");
+  const [status, setStatus] = useState("");
+  const [saving, setSaving] = useState(false);
+
+  // Adopt server values only when the DATA changed, never merely because a
+  // refetch handed us a new object. Every desk mutation (a poster upload on
+  // this row, a franchise saved below) triggers a full reload, and comparing
+  // object identity here would silently wipe whatever is typed but unsaved.
+  const serverKey = JSON.stringify(serverForm);
+  const [prevKey, setPrevKey] = useState(serverKey);
+  if (prevKey !== serverKey) {
+    setPrevKey(serverKey);
+    setForm(serverForm);
   }
 
   async function save() {
@@ -192,8 +202,13 @@ function TitleRow({
       )
     )
       return;
-    await api(`/api/desk/titles?id=${title.id}`, { method: "DELETE" });
-    await onChanged();
+    setStatus("");
+    try {
+      await api(`/api/desk/titles?id=${title.id}`, { method: "DELETE" });
+      await onChanged();
+    } catch (e) {
+      setStatus(e instanceof Error ? e.message : "delete failed");
+    }
   }
 
   return (
@@ -275,6 +290,7 @@ function FranchiseManager({
   onChanged: () => Promise<void>;
 }) {
   const [edits, setEdits] = useState<Record<string, { name: string; description: string }>>({});
+  const [status, setStatus] = useState("");
 
   function editState(f: Franchise) {
     return edits[f.id] ?? { name: f.name, description: f.description ?? "" };
@@ -282,17 +298,40 @@ function FranchiseManager({
 
   async function save(f: Franchise) {
     const e = editState(f);
-    await api("/api/desk/franchises", {
-      method: "PATCH",
-      json: { id: f.id, name: e.name, description: e.description },
-    });
-    await onChanged();
+    if (!e.name.trim()) {
+      // the API skips an empty name but still returns 200, so without this the
+      // field would keep showing "" while the site kept the old name
+      setStatus(`a franchise needs a name — "${f.name}" left as it was`);
+      return;
+    }
+    setStatus("");
+    try {
+      await api("/api/desk/franchises", {
+        method: "PATCH",
+        json: { id: f.id, name: e.name.trim(), description: e.description },
+      });
+      // drop the local override so the row re-syncs from the saved data
+      setEdits((prev) => {
+        const next = { ...prev };
+        delete next[f.id];
+        return next;
+      });
+      setStatus("saved ✦");
+      await onChanged();
+    } catch (err) {
+      setStatus(err instanceof Error ? err.message : "save failed");
+    }
   }
 
   async function remove(f: Franchise) {
     if (!confirm(`Delete the “${f.name}” franchise? Its titles stay — they just un-nest.`)) return;
-    await api(`/api/desk/franchises?id=${f.id}`, { method: "DELETE" });
-    await onChanged();
+    setStatus("");
+    try {
+      await api(`/api/desk/franchises?id=${f.id}`, { method: "DELETE" });
+      await onChanged();
+    } catch (err) {
+      setStatus(err instanceof Error ? err.message : "delete failed");
+    }
   }
 
   if (!franchises.length) return null;
@@ -321,6 +360,11 @@ function FranchiseManager({
           <button className="chip" style={{ cursor: "pointer", background: "none", color: "var(--pink)" }} onClick={() => remove(f)}>✕</button>
         </div>
       ))}
+      {status && (
+        <span className="mono-note" style={{ color: status.includes("✦") ? "var(--amber)" : "var(--pink)" }}>
+          {status}
+        </span>
+      )}
     </section>
   );
 }

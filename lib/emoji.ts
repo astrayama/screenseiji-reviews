@@ -43,6 +43,19 @@ export const EMOJI_SCALE: EmojiOption[] = [
   { char: "😳", label: "shocked" },
   { char: "🥵", label: "steamy" },
   { char: "😱", label: "terrifying" },
+  { char: "👏", label: "applause" },
+  { char: "👌", label: "nailed it" },
+  { char: "🙌", label: "hallelujah" },
+  { char: "😬", label: "awkward" },
+  { char: "🫩", label: "exhausted" },
+  { char: "😴", label: "slept through it" },
+  { char: "😵‍💫", label: "disoriented" },
+  { char: "🤢", label: "queasy" },
+  { char: "🫶", label: "love letter" },
+  { char: "🫣", label: "couldn't look" },
+  { char: "🤡", label: "clownish" },
+  { char: "👍", label: "yes" },
+  { char: "🙅", label: "hard pass" },
 ];
 
 const SKIN_TONE = /[\u{1F3FB}-\u{1F3FF}]/u;

@@ -33,8 +33,12 @@ export function SettingsPanel() {
 
   async function save() {
     setStatus("");
-    await api("/api/desk/settings", { method: "PUT", json: values });
-    setStatus("saved ✦");
+    try {
+      await api("/api/desk/settings", { method: "PUT", json: values });
+      setStatus("saved ✦");
+    } catch (e) {
+      setStatus(e instanceof Error ? e.message : "save failed");
+    }
   }
 
   async function uploadPhoto(file: File) {
@@ -56,9 +60,14 @@ export function SettingsPanel() {
   }
 
   async function removePhoto() {
-    await api("/api/desk/settings", { method: "PUT", json: { photo_url: "" } });
-    setPhotoUrl("");
-    setStatus("back to the abstract mark ✦");
+    setStatus("");
+    try {
+      await api("/api/desk/settings", { method: "PUT", json: { photo_url: "" } });
+      setPhotoUrl("");
+      setStatus("back to the abstract mark ✦");
+    } catch (e) {
+      setStatus(e instanceof Error ? e.message : "couldn't remove the photo");
+    }
   }
 
   if (!loaded) return <p className="mono-note">loading…</p>;
