@@ -1,7 +1,9 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  /* config options here */
+  // Emits a self-contained server in .next/standalone so the Cloud Run image
+  // carries only the files the app actually needs.
+  output: "standalone",
 };
 
 export default nextConfig;

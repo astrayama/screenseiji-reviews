@@ -16,7 +16,11 @@ const MAX_FAILS = 8;
 const fails = new Map<string, { count: number; resetAt: number }>();
 
 function clientIp(req: NextRequest): string {
-  return req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "local";
+  // Google's front end APPENDS the real client address, so the last entry is
+  // trustworthy; anything earlier can be written by the visitor to dodge the
+  // brake.
+  const hops = req.headers.get("x-forwarded-for")?.split(",").map((s) => s.trim()).filter(Boolean);
+  return hops?.at(-1) || "local";
 }
 
 function tooManyFails(ip: string): boolean {

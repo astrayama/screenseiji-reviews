@@ -6,7 +6,9 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "setup:production": "bash scripts/setup-production.sh",
+    "deploy": "bash scripts/deploy.sh"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.112.4",

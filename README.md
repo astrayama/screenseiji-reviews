@@ -47,79 +47,88 @@ cd ~/screen-sage && npm run dev -- --port 3210
 
 ## Part 2 — The TMDB key ✅ already done
 
-Your TMDB read access token is installed in `.env.local`, so quick-add autofills locally: type "Dune", get the poster, year, runtime, genres, and the franchise detected automatically.
-
-**One thing to remember for Part 3:** when you set up Vercel, paste the same token as the `TMDB_API_KEY` environment variable (it's in `~/screen-sage/.env.local` if you need to copy it again).
+Your TMDB read access token is installed in `.env.local`, so quick-add autofills locally: type "Dune", get the poster, year, runtime, genres, and the franchise detected automatically. It's also already stored in Google Secret Manager for the live site.
 
 ---
 
-## Part 3 — Going live (free, ~30 min total)
+## Part 3 — Going live on Google Cloud (~15 min of your time)
 
-Three accounts, all free tier, all "Sign in with GitHub" (make a GitHub account first at https://github.com/signup if you don't have one). Take breaks between steps — nothing here is time-sensitive.
+**Where everything lives**
 
-### 3a. Push the code to GitHub
+- **The website** → Google Cloud Run, in your project **Screen Sage Studios** (`yggdrasil-476219`), region `us-central1`
+- **The database + poster images** → Supabase (free hosted account)
+- **Passwords and secret keys** → Google Secret Manager (never in a file, never in git)
 
-```bash
-cd ~/screen-sage && git add -A && git commit -m "Screen Sage"
-```
+**Already done for you ✅** Google APIs switched on · a locked-down account for the website that can only read its own secrets · a fresh production session key · the TMDB key.
 
-1. Go to https://github.com/new → name it `screen-sage` → **Private** → Create
-2. Follow the "push an existing repository" commands GitHub shows you (two lines, copy-paste into Terminal)
+Take breaks between steps — nothing here is time-sensitive.
 
-### 3b. Supabase (the database)
+### 3a. Make the Supabase project (~5 min)
 
 1. Go to https://supabase.com → **Start your project** → sign in with GitHub
-2. **New project** → name `screen-sage` → set a database password (save it in your password manager!) → region closest to you → Create
-3. Wait ~2 min for it to provision ☕
-4. Link and push your schema from Terminal:
+2. **New project** → name it `screen-sage`
+3. Make a **database password** → save it in your password manager right now (you need it in 3b)
+4. Region: **East US (Ohio)** — closest to where Google runs the site
+5. Click **Create** and wait ~2 minutes ☕
+
+### 3b. Give it the database structure (~3 min)
+
+Run these one at a time:
 
 ```bash
 cd ~/screen-sage && npx supabase login
 ```
 
+A browser opens → click **Authorize** → come back.
+
 ```bash
 cd ~/screen-sage && npx supabase link
 ```
 
-   (pick the `screen-sage` project when it asks, enter the DB password)
+Pick `screen-sage` from the list, then type the database password from 3a.
 
 ```bash
 cd ~/screen-sage && npx supabase db push
 ```
 
-5. Collect three values from the dashboard — **Project Settings → API Keys**:
-   - Project URL (like `https://abcdefgh.supabase.co`)
-   - **Publishable** key (starts `sb_publishable_`)
-   - **Secret** key (starts `sb_secret_`) — this one is sensitive, never share it
+Type `y` if it asks. This creates every table plus the poster storage.
 
-### 3c. Resend (the newsletter)
+### 3c. Hand over the keys (~3 min)
 
-1. Go to https://resend.com → sign up with GitHub
-2. **API Keys** → **Create API Key** → copy it (starts `re_`)
-3. **Heads-up:** until you verify a domain, Resend only delivers to *your own* email address — perfect for testing. When you're ready for real subscribers: **Domains → Add Domain**, add the DNS records it shows to wherever your domain lives, then set `NEWSLETTER_FROM` to something like `Screen Sage <dispatches@yourdomain.com>`.
+Open the Supabase dashboard → **Project Settings → API Keys**. Then run:
 
-### 3d. Vercel (the hosting)
+```bash
+cd ~/screen-sage && npm run setup:production
+```
 
-1. Go to https://vercel.com → sign up with GitHub
-2. **Add New → Project** → Import `screen-sage`
-3. Before clicking Deploy: open **Environment Variables** and add these (from your notes above):
+It asks five things, one at a time, and checks each answer:
 
-| Name | Value |
-|---|---|
-| `SUPABASE_URL` | your Project URL |
-| `SUPABASE_PUBLISHABLE_KEY` | `sb_publishable_…` |
-| `SUPABASE_SECRET_KEY` | `sb_secret_…` |
-| `DESK_PASSWORD` | invent a strong one — this guards your Desk |
-| `SESSION_SECRET` | run `openssl rand -hex 32` in Terminal, paste the output |
-| `TMDB_API_KEY` | your TMDB key |
-| `RESEND_API_KEY` | `re_…` |
-| `NEWSLETTER_FROM` | `Screen Sage <onboarding@resend.dev>` (until you verify a domain) |
-| `SITE_URL` | your Vercel URL, e.g. `https://screen-sage.vercel.app` (add it after the first deploy, then redeploy) |
+1. Project URL — copy/paste
+2. Publishable key — copy/paste
+3. Secret key — copy/paste (**typing stays hidden**)
+4. A new Desk password for the live site, twice (**hidden**, 12+ characters) — this is what guards your admin panel on the internet, so make it a strong one, not `sage-local`
+5. Resend key — just press Enter to skip for now
 
-4. **Deploy** 🚀
-5. After it builds: visit `your-url/desk`, speak the word, and publish from anywhere.
+### 3d. Deploy 🚀 (~5 min, mostly waiting)
 
-To ship changes later: `git add -A && git commit -m "…" && git push` — Vercel redeploys automatically.
+```bash
+cd ~/screen-sage && npm run deploy
+```
+
+When it prints **"Live at …"**, open that address. Then add `/desk` to the end and log in with the password from 3c.
+
+### Later on
+
+- **Ship changes:** `npm run deploy` again. That's the whole process.
+- **Change a password or key:** `npm run setup:production`, then `npm run deploy`.
+- **Newsletter sending:** make a free https://resend.com account → **API Keys** → create one → run `npm run setup:production` and paste it at step 5 → `npm run deploy`. Until you verify your own domain in Resend, it only delivers to your own email.
+- **Your own domain:** once you have one, put `SITE_URL=https://yourdomain.com` in `deploy.env`, then ask Claude to map it in Cloud Run.
+
+### What it costs
+
+The site sleeps when nobody's visiting and wakes on the first request (a few seconds' delay), so a personal site should stay at or near **$0** on Google's free tiers. To be safe, set a budget alert: Google Cloud console → **Billing → Budgets & alerts → Create budget** → $5.
+
+Supabase's free plan can **pause a project during long quiet stretches**. If the site ever shows a database error after weeks without visitors, open the Supabase dashboard and click **Restore**. The $25/month Pro plan avoids this entirely.
 
 ---
 
@@ -127,7 +136,7 @@ To ship changes later: `git add -A && git commit -m "…" && git push` — Verce
 
 ### Environment variables
 
-Everything lives in `.env.local` locally, and in Vercel's Environment Variables in production. `.env.example` is the checklist.
+Locally, everything lives in `.env.local` (`.env.example` is the checklist). In production, non-secret settings live in `deploy.env` and secrets in Google Secret Manager — both written by `npm run setup:production`.
 
 ### Useful commands
 
@@ -138,6 +147,8 @@ Everything lives in `.env.local` locally, and in Vercel's Environment Variables 
 | `npx supabase db reset --local` | wipe local data, replay schema |
 | `npx supabase db push` | push schema to the hosted project |
 | `npm run build` | production build check |
+| `npm run setup:production` | store/update production keys + passwords |
+| `npm run deploy` | build in Google Cloud and ship to Cloud Run |
 | `npm run lint` / `npx tsc --noEmit` | lint / type check |
 
 ### How scores roll up
@@ -146,7 +157,7 @@ Everything lives in `.env.local` locally, and in Vercel's Environment Variables 
 - **Season** → the season review's score; episode chips show each episode's score
 - **Series average** → average of published season scores (falls back to episode scores)
 - **Franchise average** → average of member titles' scores
-- Sub-scores are always optional and display sorted high → low; a missing category simply doesn't appear.
+- Sub-scores are always optional and display in the order you set in the Desk's Tags tab; a missing category simply doesn't appear.
 
 ### Scheduling
 
