@@ -25,7 +25,7 @@ cd ~/screen-sage && npx supabase start
 **3. Start the site**
 
 ```bash
-cd ~/screen-sage && npm run dev -- --port 3210
+cd ~/screen-sage && npm run dev
 ```
 
 **4. Open these two tabs**
@@ -142,7 +142,7 @@ Locally, everything lives in `.env.local` (`.env.example` is the checklist). In 
 
 | Command | What it does |
 |---|---|
-| `npm run dev -- --port 3210` | dev server |
+| `npm run dev` | dev server |
 | `npx supabase start` / `stop` | local database up / down |
 | `npx supabase db reset --local` | wipe local data, replay schema |
 | `npx supabase db push` | push schema to the hosted project |
