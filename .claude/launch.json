@@ -4,7 +4,7 @@
     {
       "name": "screen-sage",
       "runtimeExecutable": "npm",
-      "runtimeArgs": ["run", "dev", "--", "--port", "3210"],
+      "runtimeArgs": ["run", "dev"],
       "port": 3210
     }
   ]
