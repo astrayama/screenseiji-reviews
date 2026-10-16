@@ -47,88 +47,54 @@ cd ~/screen-sage && npm run dev
 
 ## Part 2 — The TMDB key ✅ already done
 
-Your TMDB read access token is installed in `.env.local`, so quick-add autofills locally: type "Dune", get the poster, year, runtime, genres, and the franchise detected automatically. It's also already stored in Google Secret Manager for the live site.
+Your TMDB read access token is installed in `.env.local`, so quick-add autofills locally: type "Dune", get the poster, year, runtime, genres, and the franchise detected automatically. It's also set on the live site.
 
 ---
 
-## Part 3 — Going live on Google Cloud (~15 min of your time)
+## Part 3 — It's live ✅
 
-**Where everything lives**
+**https://reviews.screenseiji.com**
 
-- **The website** → Google Cloud Run, in your project **Screen Sage Studios** (`yggdrasil-476219`), region `us-central1`
-- **The database + poster images** → Supabase (free hosted account)
-- **Passwords and secret keys** → Google Secret Manager (never in a file, never in git)
+| Piece | Where it lives |
+|---|---|
+| The website | Vercel, project `screen-sage-reviews` |
+| The database + poster images | Supabase, project `screen-sage-reviews` |
+| Keys and passwords | Vercel environment variables (never in a file, never in git) |
+| The domain | `screenseiji.com` at Namecheap, `reviews` pointed at Vercel |
 
-**Already done for you ✅** Google APIs switched on · a locked-down account for the website that can only read its own secrets · a fresh production session key · the TMDB key.
-
-Take breaks between steps — nothing here is time-sensitive.
-
-### 3a. Make the Supabase project (~5 min)
-
-1. Go to https://supabase.com → **Start your project** → sign in with GitHub
-2. **New project** → name it `screen-sage`
-3. Make a **database password** → save it in your password manager right now (you need it in 3b)
-4. Region: **East US (Ohio)** — closest to where Google runs the site
-5. Click **Create** and wait ~2 minutes ☕
-
-### 3b. Give it the database structure (~3 min)
-
-Run these one at a time:
-
-```bash
-cd ~/screen-sage && npx supabase login
-```
-
-A browser opens → click **Authorize** → come back.
-
-```bash
-cd ~/screen-sage && npx supabase link
-```
-
-Pick `screen-sage` from the list, then type the database password from 3a.
-
-```bash
-cd ~/screen-sage && npx supabase db push
-```
-
-Type `y` if it asks. This creates every table plus the poster storage.
-
-### 3c. Hand over the keys (~3 min)
-
-Open the Supabase dashboard → **Project Settings → API Keys**. Then run:
-
-```bash
-cd ~/screen-sage && npm run setup:production
-```
-
-It asks five things, one at a time, and checks each answer:
-
-1. Project URL — copy/paste
-2. Publishable key — copy/paste
-3. Secret key — copy/paste (**typing stays hidden**)
-4. A new Desk password for the live site, twice (**hidden**, 12+ characters) — this is what guards your admin panel on the internet, so make it a strong one, not `sage-local`
-5. Resend key — just press Enter to skip for now
-
-### 3d. Deploy 🚀 (~5 min, mostly waiting)
+### Putting changes live
 
 ```bash
 cd ~/screen-sage && npm run deploy
 ```
 
-When it prints **"Live at …"**, open that address. Then add `/desk` to the end and log in with the password from 3c.
+That's it. Takes a couple of minutes.
 
-### Later on
+### Moving local work to the live site
 
-- **Ship changes:** `npm run deploy` again. That's the whole process.
-- **Change a password or key:** `npm run setup:production`, then `npm run deploy`.
-- **Newsletter sending:** make a free https://resend.com account → **API Keys** → create one → run `npm run setup:production` and paste it at step 5 → `npm run deploy`. Until you verify your own domain in Resend, it only delivers to your own email.
-- **Your own domain:** once you have one, put `SITE_URL=https://yourdomain.com` in `deploy.env`, then ask Claude to map it in Cloud Run.
+`npx supabase db push` only sends the table *structure*. To send what you've actually written — reviews, titles, tags, settings — run:
+
+```bash
+cd ~/screen-sage && npm run push:data
+```
+
+It asks for your Supabase database password and refuses to run if the live site already has reviews, so it can't overwrite anything.
+
+### Changing a password or key
+
+```bash
+cd ~/screen-sage && npm run setup:production
+```
+
+Press Enter to skip any line you don't want to change, then `npm run deploy`.
+
+### Newsletter sending
+
+Make a free https://resend.com account → **API Keys** → create one → run `npm run setup:production`, paste it at the Resend prompt → `npm run deploy`. Until you verify your own domain in Resend, it only delivers to your own email address.
 
 ### What it costs
 
-The site sleeps when nobody's visiting and wakes on the first request (a few seconds' delay), so a personal site should stay at or near **$0** on Google's free tiers. To be safe, set a budget alert: Google Cloud console → **Billing → Budgets & alerts → Create budget** → $5.
-
-Supabase's free plan can **pause a project during long quiet stretches**. If the site ever shows a database error after weeks without visitors, open the Supabase dashboard and click **Restore**. The $25/month Pro plan avoids this entirely.
+Vercel's free tier covers a personal site, and Supabase's free tier covers the database. Supabase can **pause a free project during long quiet stretches** — if the site ever shows a database error after weeks without visitors, open the Supabase dashboard and click **Restore**.
 
 ---
 
@@ -136,7 +102,7 @@ Supabase's free plan can **pause a project during long quiet stretches**. If the
 
 ### Environment variables
 
-Locally, everything lives in `.env.local` (`.env.example` is the checklist). In production, non-secret settings live in `deploy.env` and secrets in Google Secret Manager — both written by `npm run setup:production`.
+Locally, everything lives in `.env.local` (`.env.example` is the checklist). In production everything lives in Vercel's environment variables, written by `npm run setup:production`.
 
 ### Useful commands
 
@@ -147,8 +113,9 @@ Locally, everything lives in `.env.local` (`.env.example` is the checklist). In 
 | `npx supabase db reset --local` | wipe local data, replay schema |
 | `npx supabase db push` | push schema to the hosted project |
 | `npm run build` | production build check |
-| `npm run setup:production` | store/update production keys + passwords |
-| `npm run deploy` | build in Google Cloud and ship to Cloud Run |
+| `npm run setup:production` | update live keys + passwords |
+| `npm run push:data` | copy local reviews up to the live database |
+| `npm run deploy` | ship to Vercel |
 | `npm run lint` / `npx tsc --noEmit` | lint / type check |
 
 ### How scores roll up
