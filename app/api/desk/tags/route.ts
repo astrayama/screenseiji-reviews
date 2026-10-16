@@ -43,7 +43,13 @@ export async function POST(req: NextRequest) {
     .insert({ name: body.name.trim(), slug: slugify(body.name), kind, color, sort_order: sortOrder })
     .select("*")
     .single();
-  if (error) return jsonError(error.code === "23505" ? "a tag with that name exists" : error.message, 400);
+  if (error) {
+    // Uniqueness is per kind, so a clash can only be within the same kind.
+    if (error.code === "23505") {
+      return jsonError(`you already have a ${kind} called "${body.name.trim()}"`, 409);
+    }
+    return jsonError(error.message, 400);
+  }
   return NextResponse.json({ tag: data });
 }
 

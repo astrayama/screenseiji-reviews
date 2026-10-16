@@ -10,7 +10,7 @@ export type SeasonRowData = {
   score: number | null;
   emoji: string | null;
   reviewingNow: boolean;
-  episodeChips: { label: string; score: number | null; emoji: string | null }[];
+  episodeChips: { label: string; score: number | null; emoji: string | null; href: string }[];
   href: string;
 };
 
@@ -58,14 +58,15 @@ export function SeasonAccordion({ seasons }: { seasons: SeasonRowData[] }) {
             {isOpen && (
               <div className="row" style={{ flexWrap: "wrap", gap: 6 }}>
                 {s.episodeChips.map((e) => (
-                  <span
+                  <Link
                     key={e.label}
+                    href={e.href}
                     className="chip chip--tag"
                     style={{ ["--c" as string]: "var(--amber)" }}
                   >
                     {e.label}
                     <Score score={e.score} emoji={e.emoji} variant="inline" layout="row" style={{ fontSize: 11 }} />
-                  </span>
+                  </Link>
                 ))}
                 <Link className="mono-note" href={s.href} style={{ alignSelf: "center" }}>
                   → season page

@@ -1,7 +1,6 @@
-"use client";
-
-import { useState } from "react";
+import Link from "next/link";
 import { Score } from "./Score";
+import { episodeTitle } from "@/lib/queries";
 
 export type EpisodeRowData = {
   number: number;
@@ -9,71 +8,68 @@ export type EpisodeRowData = {
   score: number | null;
   emoji: string | null;
   verdict: string | null;
-  bodyHtml: string | null; // pre-rendered markdown, or null if no full review
+  /* null when the episode has no review — it still lists, it just isn't a link */
+  href: string | null;
   isPeak: boolean;
 };
 
-/* Each row = one-line verdict; click expands the full episode review inline. */
+/* One row per episode. Reviewed ones open their own page; the rest sit quietly.
+   The id={"e"+n} anchors are kept so older shared links still land nearby. */
 export function EpisodeRows({ episodes }: { episodes: EpisodeRowData[] }) {
-  const [open, setOpen] = useState<number | null>(null);
-
   return (
     <div className="col" style={{ gap: 8 }}>
       {episodes.map((e) => {
-        const isOpen = open === e.number;
-        const expandable = Boolean(e.bodyHtml || e.verdict);
-        return (
-          <div
-            key={e.number}
-            id={`e${e.number}`}
-            className={e.isPeak || isOpen ? "gl gl--amber col" : "col"}
-            style={{ padding: e.isPeak || isOpen ? "10px 14px" : "4px 2px", gap: 8, scrollMarginTop: 80 }}
-          >
-            <button
-              onClick={() => expandable && setOpen(isOpen ? null : e.number)}
-              style={{
-                all: "unset",
-                cursor: expandable ? "pointer" : "default",
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "baseline",
-                gap: 12,
-              }}
-              aria-expanded={isOpen}
-            >
-              <span style={{ color: "var(--bright)", fontSize: 14.5 }}>
-                <b style={{ font: "600 12.5px var(--mono)" }}>E{String(e.number).padStart(2, "0")}</b>
-                {e.name && <> — {e.name}</>}
-                {e.isPeak && (
-                  <span className="chip chip--tag" style={{ ["--c" as string]: "var(--amber)", marginLeft: 8 }}>
-                    season peak
-                  </span>
-                )}
-              </span>
-              <span className="row" style={{ flex: "none" }}>
-                {e.verdict && !isOpen && (
-                  <span className="mono-note" style={{ maxWidth: 260, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                    {e.verdict}
-                  </span>
-                )}
-                <Score
-                  score={e.score}
-                  emoji={e.emoji}
-                  variant="inline"
-                  empty="dash"
-                  style={{ fontSize: 14, fontWeight: 700 }}
-                />
-                {expandable && <span style={{ color: "var(--faint)", fontSize: 12 }}>{isOpen ? "▴" : "▾"}</span>}
-              </span>
-            </button>
-            {isOpen && (
-              <div className="col" style={{ gap: 10 }}>
-                {e.verdict && (
-                  <p className="prose" style={{ margin: 0, fontSize: 17 }}>{e.verdict}</p>
-                )}
-                {e.bodyHtml && <div className="prose" style={{ fontSize: 17 }} dangerouslySetInnerHTML={{ __html: e.bodyHtml }} />}
-              </div>
-            )}
+        const inner = (
+          <>
+            <span style={{ color: e.href ? "var(--bright)" : "var(--muted)", fontSize: 14.5 }}>
+              <b style={{ font: "600 12.5px var(--mono)" }}>E{String(e.number).padStart(2, "0")}</b>
+              {" — "}
+              {episodeTitle(e.name, e.number)}
+              {e.isPeak && (
+                <span className="chip chip--tag" style={{ ["--c" as string]: "var(--amber)", marginLeft: 8 }}>
+                  season peak
+                </span>
+              )}
+            </span>
+            <span className="row" style={{ flex: "none", gap: 8 }}>
+              {e.verdict && (
+                <span
+                  className="mono-note"
+                  style={{ maxWidth: 260, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}
+                >
+                  {e.verdict}
+                </span>
+              )}
+              <Score
+                score={e.score}
+                emoji={e.emoji}
+                variant="inline"
+                empty="dash"
+                style={{ fontSize: 14, fontWeight: 700 }}
+              />
+              {e.href && <span style={{ color: "var(--faint)", fontSize: 12 }}>›</span>}
+            </span>
+          </>
+        );
+
+        const shared = {
+          id: `e${e.number}`,
+          className: e.isPeak ? "gl gl--amber row between" : "row between",
+          style: {
+            padding: e.isPeak ? "10px 14px" : "6px 2px",
+            gap: 12,
+            alignItems: "baseline" as const,
+            scrollMarginTop: 80,
+          },
+        };
+
+        return e.href ? (
+          <Link key={e.number} href={e.href} {...shared}>
+            {inner}
+          </Link>
+        ) : (
+          <div key={e.number} {...shared}>
+            {inner}
           </div>
         );
       })}

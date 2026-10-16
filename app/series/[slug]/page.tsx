@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
-import { getSeriesPage } from "@/lib/queries";
+import { getSeriesPage, episodeHref, seasonHref } from "@/lib/queries";
 import { TagChip } from "@/components/TagChip";
 import { PosterImg } from "@/components/PosterImg";
 import { SeasonAccordion } from "@/components/SeasonAccordion";
@@ -34,10 +34,14 @@ export default async function SeriesPage({ params }: Props) {
     score: s.seasonReview?.score ?? null,
     emoji: s.seasonReview?.emoji ?? null,
     reviewingNow: !s.seasonReview && s.episodeCards.length > 0,
-    episodeChips: s.episodeCards
-      .filter((c) => c.score !== null || c.emoji)
-      .map((c) => ({ label: `E${c.episodeNumber}`, score: c.score, emoji: c.emoji })),
-    href: `/series/${title.slug}/seasons/${s.season.number}`,
+    // every reviewed episode gets a chip, including ones with only a verdict
+    episodeChips: s.episodeCards.map((c) => ({
+      label: `E${c.episodeNumber}`,
+      score: c.score,
+      emoji: c.emoji,
+      href: episodeHref(title.slug, s.season.number, c.episodeNumber ?? 0),
+    })),
+    href: seasonHref(title.slug, s.season.number),
   }));
 
   return (

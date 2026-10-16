@@ -28,7 +28,7 @@ export async function GET() {
       // "— 🤩 9.2/10", "— 🤩", "— 9.2/10", or nothing
       const bits = [c.emoji, c.score !== null ? `${c.score.toFixed(1)}/10` : null].filter(Boolean);
       const scoreBit = bits.length ? ` — ${bits.join(" ")}` : "";
-      const link = `${base}${c.href.split("#")[0]}`;
+      const link = `${base}${c.href}`;
       const categories = c.tags
         .map((t) => `    <category>${esc(t.name)}</category>`)
         .join("\n");

@@ -1,9 +1,10 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
-import { getSeasonPage } from "@/lib/queries";
+import { getSeasonPage, episodeHref } from "@/lib/queries";
 import { renderMarkdown } from "@/lib/markdown";
 import { TagChip } from "@/components/TagChip";
+import { PosterImg } from "@/components/PosterImg";
 import { EpisodeRows, EpisodeRowData } from "@/components/EpisodeRows";
 import { SubScoreBars } from "@/components/SubScoreBars";
 import { Score } from "@/components/Score";
@@ -39,9 +40,8 @@ export default async function SeasonPage({ params }: Props) {
     score: e.card?.score ?? null,
     emoji: e.card?.emoji ?? null,
     verdict: e.card?.review.verdict ?? null,
-    bodyHtml: e.card?.review.body_spoiler_free
-      ? renderMarkdown(e.card.review.body_spoiler_free)
-      : null,
+    // Only reviewed episodes have a page; the rest stay as plain rows.
+    href: e.card ? episodeHref(series.title.slug, num, e.episode.number) : null,
     isPeak: peak !== null && e.card?.score === peak,
   }));
 
@@ -56,28 +56,50 @@ export default async function SeasonPage({ params }: Props) {
         <Link href={`/series/${series.title.slug}`}>{series.title.name}</Link> → Season {num}
       </nav>
 
-      <header className="row between" style={{ alignItems: "flex-end", flexWrap: "wrap", gap: 12 }}>
-        <div className="col" style={{ gap: 8 }}>
-          <h1 className="ttl" style={{ fontSize: "clamp(26px, 4vw, 36px)" }}>
-            Season {num}
-            {entry.season.name && entry.season.name !== `Season ${num}` && (
-              <span style={{ fontSize: "0.6em" }}> — {entry.season.name}</span>
-            )}
-          </h1>
+      <header className="row" style={{ gap: 18, alignItems: "flex-start" }}>
+        <div style={{ width: 110, flex: "none" }}>
+          {/* the season's own art where TMDB gave us one, else the series' */}
+          <PosterImg
+            src={entry.season.poster_url ?? series.title.poster_url}
+            alt={`${series.title.name} season ${num}`}
+          />
+        </div>
+        <div className="col" style={{ gap: 8, flex: 1 }}>
+          <div className="row between" style={{ alignItems: "flex-start", gap: 12 }}>
+            <div className="col" style={{ gap: 4 }}>
+              <h1 className="ttl" style={{ fontSize: "clamp(28px, 4.5vw, 40px)" }}>
+                <Link href={`/series/${series.title.slug}`}>{series.title.name}</Link>
+              </h1>
+              <p
+                style={{
+                  margin: 0,
+                  font: "600 15px var(--mono)",
+                  letterSpacing: 1,
+                  color: "var(--amber)",
+                }}
+              >
+                Season {num}
+                {entry.season.name && entry.season.name !== `Season ${num}` && (
+                  <span style={{ color: "var(--muted)" }}> — {entry.season.name}</span>
+                )}
+              </p>
+            </div>
+            <Score
+              score={seasonReview?.score ?? null}
+              emoji={seasonReview?.emoji ?? null}
+              variant="pill"
+              empty="dash"
+              style={{ fontSize: 15, flex: "none" }}
+            />
+          </div>
           <div className="row" style={{ flexWrap: "wrap", gap: 6 }}>
             {series.tags.map((t) => (
               <TagChip key={t.id} tag={t} />
             ))}
             {entry.season.episode_count && <span className="chip">{entry.season.episode_count} eps</span>}
+            {entry.season.year && <span className="chip">{entry.season.year}</span>}
           </div>
         </div>
-        <Score
-          score={seasonReview?.score ?? null}
-          emoji={seasonReview?.emoji ?? null}
-          variant="pill"
-          empty="dash"
-          style={{ fontSize: 15 }}
-        />
       </header>
 
       <hr className="hr" />

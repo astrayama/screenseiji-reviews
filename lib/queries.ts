@@ -43,6 +43,7 @@ export type Season = {
   name: string | null;
   year: number | null;
   episode_count: number | null;
+  poster_url: string | null;
   title?: Title;
 };
 
@@ -101,6 +102,20 @@ export function titleHref(t: Title): string {
   return t.kind === "film" ? `/films/${t.slug}` : `/series/${t.slug}`;
 }
 
+export function seasonHref(seriesSlug: string, seasonNumber: number): string {
+  return `/series/${seriesSlug}/seasons/${seasonNumber}`;
+}
+
+/* Every episode URL on the site comes from here. */
+export function episodeHref(seriesSlug: string, seasonNumber: number, episodeNumber: number): string {
+  return `${seasonHref(seriesSlug, seasonNumber)}/episodes/${episodeNumber}`;
+}
+
+/* Episodes often arrive from TMDB without a name. */
+export function episodeTitle(name: string | null | undefined, number: number): string {
+  return name?.trim() || `Episode ${number}`;
+}
+
 function resolveCard(r: Review, tagsByTitle: Map<string, Tag[]>): ReviewCard | null {
   let rootTitle: Title | undefined;
   let seasonNumber: number | null = null;
@@ -123,7 +138,7 @@ function resolveCard(r: Review, tagsByTitle: Map<string, Tag[]>): ReviewCard | n
     episodeNumber = r.episode.number;
     const ep = r.episode.name ? ` — ${r.episode.name}` : "";
     displayName = `${rootTitle.name} S${seasonNumber}E${episodeNumber}${ep}`;
-    href = `/series/${rootTitle.slug}/seasons/${seasonNumber}#e${episodeNumber}`;
+    href = episodeHref(rootTitle.slug, seasonNumber, episodeNumber);
   }
   if (!rootTitle) return null;
 
@@ -408,6 +423,41 @@ export async function getSeasonPage(slug: string, num: number) {
   const scores = withReviews.map((e) => e.card?.score).filter((s): s is number => s != null);
   const peak = scores.length ? Math.max(...scores) : null;
   return { series, entry, episodes: withReviews, subScores, peak };
+}
+
+/* ---------- a single episode ---------- */
+
+export async function getEpisodePage(slug: string, seasonNumber: number, episodeNumber: number) {
+  const season = await getSeasonPage(slug, seasonNumber);
+  if (!season) return null;
+
+  const index = season.episodes.findIndex((e) => e.episode.number === episodeNumber);
+  if (index === -1) return null;
+  const current = season.episodes[index];
+
+  // Unreviewed episodes have no page — the season page lists them without a
+  // link, and a direct hit 404s rather than serving an empty shell.
+  if (!current.card) return null;
+
+  const subScores = await reviewSubScores(current.card.review.id);
+
+  // Walk outward to the nearest reviewed episodes on either side.
+  const reviewed = season.episodes.filter((e) => e.card);
+  const place = reviewed.findIndex((e) => e.episode.number === episodeNumber);
+  const neighbour = (e: (typeof reviewed)[number] | undefined) =>
+    e ? { number: e.episode.number, name: episodeTitle(e.episode.name, e.episode.number) } : null;
+
+  return {
+    series: season.series,
+    season: season.entry.season,
+    seasonReview: season.entry.seasonReview,
+    episode: current.episode,
+    card: current.card,
+    subScores,
+    isPeak: season.peak !== null && current.card.score === season.peak,
+    prev: neighbour(reviewed[place - 1]),
+    next: neighbour(reviewed[place + 1]),
+  };
 }
 
 /* ---------- archive ---------- */

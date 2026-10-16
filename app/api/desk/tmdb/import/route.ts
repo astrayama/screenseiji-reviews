@@ -19,16 +19,35 @@ async function ensureGenreTags(names: string[]): Promise<string[]> {
   const ids: string[] = [];
   const { count } = await db.from("tags").select("id", { count: "exact", head: true });
   let colorIndex = count ?? 0;
+
+  // Start new genres after the last one so they don't all tie at sort_order 0,
+  // which makes reordering in the Tags tab behave unpredictably.
+  const { data: last } = await db
+    .from("tags")
+    .select("sort_order")
+    .eq("kind", "genre")
+    .order("sort_order", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  let sortOrder = (last?.sort_order ?? -1) + 1;
+
   for (const name of names) {
     const slug = slugify(name);
-    const { data: existing } = await db.from("tags").select("id").eq("slug", slug).maybeSingle();
+    // Match on kind too: a mood may now share a slug with a genre, and
+    // attaching the mood here would silently mis-tag the title.
+    const { data: existing } = await db
+      .from("tags")
+      .select("id")
+      .eq("slug", slug)
+      .eq("kind", "genre")
+      .maybeSingle();
     if (existing) {
       ids.push(existing.id);
       continue;
     }
     const { data: created, error } = await db
       .from("tags")
-      .insert({ slug, name, kind: "genre", color: pickTagColor(colorIndex++) })
+      .insert({ slug, name, kind: "genre", color: pickTagColor(colorIndex++), sort_order: sortOrder++ })
       .select("id")
       .single();
     if (!error && created) ids.push(created.id);
@@ -151,8 +170,9 @@ export async function POST(req: NextRequest) {
     }
 
     // seasons + episodes (skip "specials" season 0)
-    const seasonList = (t.seasons as { season_number: number; name: string; episode_count: number; air_date?: string }[])
-      .filter((s) => s.season_number > 0);
+    const seasonList = (t.seasons as {
+      season_number: number; name: string; episode_count: number; air_date?: string; poster_path?: string | null;
+    }[]).filter((s) => s.season_number > 0);
     for (const s of seasonList) {
       const { data: season, error: se } = await db
         .from("seasons")
@@ -162,6 +182,7 @@ export async function POST(req: NextRequest) {
           name: s.name || null,
           year: s.air_date ? Number(String(s.air_date).slice(0, 4)) : null,
           episode_count: s.episode_count || null,
+          poster_url: s.poster_path ? TMDB_IMG + s.poster_path : null,
         })
         .select("id")
         .single();

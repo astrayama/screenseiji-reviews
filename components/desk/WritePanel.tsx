@@ -7,6 +7,7 @@ import { QueueSidebar } from "./QueueSidebar";
 import { Poster, UploadPoster } from "./shared";
 import { EmojiPicker } from "./EmojiPicker";
 import { Score } from "../Score";
+import { TAG_COLORS } from "@/lib/util";
 
 type Subject =
   | { kind: "title"; id: string }
@@ -493,15 +494,21 @@ function ReviewEditor({
 
   const subjectLabel = subject.kind === "title" ? title.name : (subject as { label: string }).label;
   const usedCategoryIds = new Set(subScores.map((s) => s.category_id));
-  const publicHref =
-    subject.kind === "title"
-      ? `/films/${title.slug}`
-      : (() => {
-          const season = title.seasons.find((s) =>
-            subject.kind === "season" ? s.id === subject.id : s.episodes.some((e) => e.id === subject.id)
-          );
-          return season ? `/series/${title.slug}/seasons/${season.number}` : `/series/${title.slug}`;
-        })();
+  const publicHref = (() => {
+    // a title-kind subject can be a film OR a series
+    if (subject.kind === "title") {
+      return title.kind === "film" ? `/films/${title.slug}` : `/series/${title.slug}`;
+    }
+    const season = title.seasons.find((s) =>
+      subject.kind === "season" ? s.id === subject.id : s.episodes.some((e) => e.id === subject.id)
+    );
+    if (!season) return `/series/${title.slug}`;
+    if (subject.kind === "season") return `/series/${title.slug}/seasons/${season.number}`;
+    const episode = season.episodes.find((e) => e.id === subject.id);
+    return episode
+      ? `/series/${title.slug}/seasons/${season.number}/episodes/${episode.number}`
+      : `/series/${title.slug}/seasons/${season.number}`;
+  })();
 
   return (
     <section className="col" style={{ gap: 14 }}>
@@ -516,7 +523,12 @@ function ReviewEditor({
 
       {/* tags live on the root title */}
       <div className="col" style={{ gap: 6 }}>
-        <span className="label" style={{ fontSize: 10 }}>Tags</span>
+        <div className="row between">
+          <span className="label" style={{ fontSize: 10 }}>Tags</span>
+          <span className="mono-note" style={{ fontSize: 10 }}>
+            moods are yours to invent · genres come from the database
+          </span>
+        </div>
         <div className="row" style={{ flexWrap: "wrap", gap: 5 }}>
           {tags.map((t) => {
             const on = myTagIds.has(t.id);
@@ -535,7 +547,7 @@ function ReviewEditor({
               </button>
             );
           })}
-          {tags.length === 0 && <span className="mono-note">no tags yet — make some in the Tags tab</span>}
+          <NewMoodChip titleId={title.id} existing={tags} onChanged={onChanged} />
         </div>
       </div>
 
@@ -690,5 +702,96 @@ function ReviewEditor({
         </div>
       )}
     </section>
+  );
+}
+
+/* ---------------- invent a mood while writing ---------------- */
+
+/* Moods are the one tag kind that only ever comes from Isa — TMDB supplies
+   genres. Creating one here applies it to the open review immediately, which
+   also means it shows up publicly as soon as that review is published. */
+function NewMoodChip({
+  titleId,
+  existing,
+  onChanged,
+}: {
+  titleId: string;
+  existing: DeskTag[];
+  onChanged: () => Promise<void>;
+}) {
+  const [open, setOpen] = useState(false);
+  const [name, setName] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState("");
+
+  async function create() {
+    const clean = name.trim();
+    if (!clean) return;
+    setBusy(true);
+    setError("");
+    try {
+      const moods = existing.filter((t) => t.kind === "mood");
+      const { tag } = await api<{ tag: DeskTag }>("/api/desk/tags", {
+        method: "POST",
+        json: {
+          name: clean,
+          kind: "mood",
+          color: TAG_COLORS[moods.length % TAG_COLORS.length],
+          sort_order: moods.length,
+        },
+      });
+      // apply it to this review's title straight away
+      await api("/api/desk/title-tags", {
+        method: "POST",
+        json: { title_id: titleId, tag_id: tag.id, on: true },
+      });
+      setName("");
+      setOpen(false);
+      await onChanged();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "couldn't add that mood");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  if (!open) {
+    return (
+      <button
+        className="chip"
+        style={{ cursor: "pointer", background: "none", borderStyle: "dashed" }}
+        onClick={() => setOpen(true)}
+      >
+        ＋ new mood
+      </button>
+    );
+  }
+
+  return (
+    <span className="row" style={{ gap: 5 }}>
+      <input
+        className="input"
+        autoFocus
+        placeholder="e.g. Melancholy"
+        value={name}
+        onChange={(e) => setName(e.target.value)}
+        onKeyDown={(e) => {
+          if (e.key === "Enter") { e.preventDefault(); create(); }
+          if (e.key === "Escape") { setOpen(false); setName(""); setError(""); }
+        }}
+        style={{ width: 150, padding: "5px 10px" }}
+      />
+      <button className="chip chip--solid" style={{ cursor: "pointer" }} onClick={create} disabled={busy || !name.trim()}>
+        {busy ? "…" : "add"}
+      </button>
+      <button
+        className="chip"
+        style={{ cursor: "pointer", background: "none" }}
+        onClick={() => { setOpen(false); setName(""); setError(""); }}
+      >
+        ✕
+      </button>
+      {error && <span className="mono-note" style={{ color: "var(--pink)" }}>{error}</span>}
+    </span>
   );
 }

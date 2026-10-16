@@ -97,7 +97,14 @@ export function DeskApp() {
             <WritePanel library={library} tags={tags} categories={categories} onChanged={reload} />
           )}
           {tab === "Library" && <LibraryPanel library={library} onChanged={reload} />}
-          {tab === "Tags" && <TagsPanel tags={tags} categories={categories} onChanged={reload} />}
+          {tab === "Tags" && (
+            <TagsPanel
+              tags={tags}
+              categories={categories}
+              usedTagIds={new Set(library.titleTags.map((tt) => tt.tag_id))}
+              onChanged={reload}
+            />
+          )}
           {tab === "Rail" && <RailPanel library={library} />}
           {tab === "Lists" && <ListsPanel library={library} />}
           {tab === "Audience" && <AudiencePanel />}

@@ -7,17 +7,18 @@ import { TAG_COLORS } from "@/lib/util";
 export function TagsPanel({
   tags,
   categories,
+  usedTagIds,
   onChanged,
 }: {
   tags: DeskTag[];
   categories: Category[];
+  usedTagIds: Set<string>;
   onChanged: () => Promise<void>;
 }) {
-  const [name, setName] = useState("");
-  const [kind, setKind] = useState<"mood" | "genre">("mood");
-  const [color, setColor] = useState(TAG_COLORS[3]);
   const [catName, setCatName] = useState("");
   const [error, setError] = useState("");
+  // add-failures belong next to the form that caused them, not at the foot
+  const [addError, setAddError] = useState<{ mood?: string; genre?: string }>({});
   const [busy, setBusy] = useState(false);
 
   /* every mutation goes through here, so nothing ever fails silently */
@@ -36,15 +37,22 @@ export function TagsPanel({
 
   const byKind = (k: "mood" | "genre") => tags.filter((t) => t.kind === k);
 
-  function addTag() {
-    if (!name.trim()) return;
-    run(async () => {
+  async function addTag(kind: "mood" | "genre", name: string, color: string): Promise<boolean> {
+    setBusy(true);
+    setAddError((p) => ({ ...p, [kind]: undefined }));
+    try {
       await api("/api/desk/tags", {
         method: "POST",
         json: { name, kind, color, sort_order: byKind(kind).length },
       });
-      setName("");
-    });
+      await onChanged();
+      return true;
+    } catch (e) {
+      setAddError((p) => ({ ...p, [kind]: e instanceof Error ? e.message : "that didn't work" }));
+      return false;
+    } finally {
+      setBusy(false);
+    }
   }
 
   function addCategory() {
@@ -82,12 +90,22 @@ export function TagsPanel({
     <div className="col" style={{ gap: 26, maxWidth: 640 }}>
       {(["mood", "genre"] as const).map((k) => (
         <section key={k} className="col" style={{ gap: 8 }}>
-          <span className="label">{k === "mood" ? "Moods" : "Genres"}</span>
+          <div className="row between">
+            <span className="label">{k === "mood" ? "Moods" : "Genres"}</span>
+            <span className="mono-note" style={{ fontSize: 10 }}>
+              {k === "genre" ? "created automatically by TMDB imports" : "your own vocabulary"}
+            </span>
+          </div>
+
+          {/* the add control sits WITH its section — it used to live below
+              every genre card, which made moods look impossible to create */}
+          <AddTagRow kind={k} busy={busy} count={byKind(k).length} onAdd={addTag} error={addError[k]} />
+
           {byKind(k).length === 0 && (
             <span className="mono-note">
               none yet{" "}
               {k === "genre"
-                ? "— TMDB imports create genres automatically"
+                ? "— import a film or series and they appear"
                 : "— moods are your signature, invent a few"}
             </span>
           )}
@@ -98,6 +116,7 @@ export function TagsPanel({
               first={i === 0}
               last={i === byKind(k).length - 1}
               busy={busy}
+              unused={!usedTagIds.has(t.id)}
               onMove={(dir) => moveTag(k, t.id, dir)}
               onPatch={(patch) => run(() => api("/api/desk/tags", { method: "PATCH", json: { id: t.id, ...patch } }))}
               onDelete={() =>
@@ -108,25 +127,6 @@ export function TagsPanel({
           ))}
         </section>
       ))}
-
-      <section className="gl col" style={{ padding: 14, gap: 8 }}>
-        <span className="label" style={{ fontSize: 10 }}>New tag</span>
-        <div className="row" style={{ flexWrap: "wrap" }}>
-          <input className="input" style={{ width: 170 }} placeholder="e.g. Melancholy" value={name} onChange={(e) => setName(e.target.value)} />
-          {(["mood", "genre"] as const).map((k) => (
-            <button
-              key={k}
-              className={kind === k ? "chip chip--solid" : "chip"}
-              style={{ cursor: "pointer", background: kind === k ? undefined : "none" }}
-              onClick={() => setKind(k)}
-            >
-              {k}
-            </button>
-          ))}
-          <Swatches value={color} onPick={setColor} />
-          <button className="btn btn--amber" onClick={addTag} disabled={busy || !name.trim()}>add</button>
-        </div>
-      </section>
 
       <section className="col" style={{ gap: 8 }}>
         <span className="label">Sub-score categories</span>
@@ -172,6 +172,7 @@ function TagRow({
   first,
   last,
   busy,
+  unused,
   onMove,
   onPatch,
   onDelete,
@@ -180,6 +181,7 @@ function TagRow({
   first: boolean;
   last: boolean;
   busy: boolean;
+  unused: boolean;
   onMove: (dir: -1 | 1) => void;
   onPatch: (patch: Record<string, unknown>) => void;
   onDelete: () => void;
@@ -226,6 +228,14 @@ function TagRow({
       <span className="mono-note" style={{ fontSize: 10 }}>
         <a href={url} target="_blank" rel="noopener" style={{ textDecoration: "underline" }}>{url}</a>
         {" · "}slug fixed at creation, so this link never breaks on a rename
+        {unused && (
+          <>
+            {" · "}
+            <span style={{ color: "var(--pink)" }}>
+              not on any title yet, so it stays hidden on the site
+            </span>
+          </>
+        )}
       </span>
       {kindWarning && (
         <span className="mono-note" style={{ fontSize: 10, color: "var(--pink)" }}>
@@ -304,5 +314,51 @@ function Swatches({ value, onPick }: { value: string; onPick: (c: string) => voi
         }}
       />
     </span>
+  );
+}
+
+/* ---------------- add a tag, inside its own section ---------------- */
+
+function AddTagRow({
+  kind,
+  busy,
+  count,
+  onAdd,
+  error,
+}: {
+  kind: "mood" | "genre";
+  busy: boolean;
+  count: number;
+  onAdd: (kind: "mood" | "genre", name: string, color: string) => Promise<boolean>;
+  error?: string;
+}) {
+  const [name, setName] = useState("");
+  const [color, setColor] = useState(TAG_COLORS[count % TAG_COLORS.length]);
+
+  async function submit() {
+    if (!name.trim()) return;
+    const ok = await onAdd(kind, name.trim(), color);
+    if (ok) setName("");   // keep the text on failure so it isn't retyped
+  }
+
+  return (
+    <div className="col" style={{ gap: 5 }}>
+      <div className="row" style={{ flexWrap: "wrap", gap: 6 }}>
+        <input
+          className="input"
+          style={{ width: 170 }}
+          placeholder={kind === "mood" ? "e.g. Melancholy" : "e.g. Horror"}
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+          onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); submit(); } }}
+          aria-label={`New ${kind} name`}
+        />
+        <Swatches value={color} onPick={setColor} />
+        <button className="btn btn--amber" onClick={submit} disabled={busy || !name.trim()}>
+          add {kind}
+        </button>
+      </div>
+      {error && <span className="mono-note" style={{ color: "var(--pink)" }}>{error}</span>}
+    </div>
   );
 }

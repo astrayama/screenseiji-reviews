@@ -128,10 +128,12 @@ export default async function FilmPage({ params }: Props) {
       </Reveal>
 
       {/* spoiler-free */}
-      {spoilerFreeHtml && (
+      {/* a pull quote can stand on its own — it used to be hidden whenever
+          there was no spoiler-free body to wrap it */}
+      {(spoilerFreeHtml || review.pull_quote) && (
         <section className="col" style={{ gap: 8 }}>
-          <span className="label">Spoiler-free</span>
-          <div className="prose" dangerouslySetInnerHTML={{ __html: spoilerFreeHtml }} />
+          {spoilerFreeHtml && <span className="label">Spoiler-free</span>}
+          {spoilerFreeHtml && <div className="prose" dangerouslySetInnerHTML={{ __html: spoilerFreeHtml }} />}
           {review.pull_quote && <div className="pull-quote">“{review.pull_quote}”</div>}
         </section>
       )}
