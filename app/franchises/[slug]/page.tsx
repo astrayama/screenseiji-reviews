@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { getFranchisePage, scoreForRootTitle, titleHref } from "@/lib/queries";
+import { splitTags } from "@/lib/util";
 import { TagChip } from "@/components/TagChip";
 import { PosterImg } from "@/components/PosterImg";
 import { FranchiseShelf } from "@/components/FranchiseShelf";
@@ -87,11 +88,17 @@ export default async function FranchisePage({ params }: Props) {
                   <div className="col" style={{ gap: 4 }}>
                     <b style={{ color: "var(--bright)", fontSize: 14.5 }}>{c.displayName}</b>
                     <div className="row" style={{ gap: 4 }}>
-                      {c.tags.slice(0, 3).map((t) => (
-                        <span key={t.id} className="chip chip--tag" style={{ ["--c" as string]: t.color, fontSize: 9, padding: "1px 7px" }}>
-                          {t.name}
-                        </span>
-                      ))}
+                      {[...splitTags(c.tags).moods, ...splitTags(c.tags).genres]
+                        .slice(0, 3)
+                        .map((t) => (
+                          <span
+                            key={t.id}
+                            className={`chip chip--tag${t.kind === "mood" ? " chip--mood" : ""}`}
+                            style={{ ["--c" as string]: t.color, fontSize: 9, padding: "1px 7px" }}
+                          >
+                            {t.name}
+                          </span>
+                        ))}
                     </div>
                   </div>
                 </div>

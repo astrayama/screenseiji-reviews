@@ -2,7 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { getSeriesPage, episodeHref, seasonHref } from "@/lib/queries";
-import { TagChip } from "@/components/TagChip";
+import { TagRows } from "@/components/TagRows";
 import { PosterImg } from "@/components/PosterImg";
 import { SeasonAccordion } from "@/components/SeasonAccordion";
 import { NewsletterBar } from "@/components/NewsletterBar";
@@ -56,10 +56,8 @@ export default async function SeriesPage({ params }: Props) {
         </div>
         <div className="col" style={{ gap: 9, flex: 1 }}>
           <h1 className="ttl" style={{ fontSize: "clamp(28px, 4.5vw, 40px)" }}>{title.name}</h1>
+          <TagRows tags={tags} />
           <div className="row" style={{ flexWrap: "wrap", gap: 6 }}>
-            {tags.map((t) => (
-              <TagChip key={t.id} tag={t} />
-            ))}
             <span className="chip">
               {seasons.length} season{seasons.length === 1 ? "" : "s"}
             </span>

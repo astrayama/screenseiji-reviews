@@ -21,6 +21,9 @@ export async function generateMetadata(): Promise<Metadata> {
 export default async function AboutPage() {
   const [cfg, cards] = await Promise.all([getSiteConfig(), getVisibleReviewCards()]);
   const name = cfg.critic_name || "The Sage";
+  const base = process.env.SITE_URL ?? "";
+  /* sameAs is what actually ties these profiles to her in search results */
+  const sameAs = [cfg.instagram_url, cfg.tiktok_url, cfg.youtube_url].filter(Boolean);
 
   const personLd = {
     "@context": "https://schema.org",
@@ -28,7 +31,8 @@ export default async function AboutPage() {
     name,
     ...(cfg.bio ? { description: cfg.bio } : {}),
     ...(cfg.photo_url ? { image: cfg.photo_url } : {}),
-    url: "/about",
+    ...(sameAs.length ? { sameAs } : {}),
+    url: `${base}/about`,
   };
 
   return (
@@ -73,7 +77,7 @@ export default async function AboutPage() {
             <p
               style={{
                 margin: 0,
-                fontFamily: "var(--serif)",
+                fontFamily: "var(--sans)",
                 fontStyle: "italic",
                 fontWeight: 600,
                 fontSize: 18,
@@ -135,9 +139,10 @@ export default async function AboutPage() {
         </Reveal>
       )}
 
-      <div className="row" style={{ gap: 6 }}>
+      <div className="row" style={{ gap: 6, flexWrap: "wrap" }}>
         <a className="chip" href="/feed.xml">RSS</a>
-        {cfg.bluesky_url && <a className="chip" href={cfg.bluesky_url} target="_blank" rel="noopener">Bluesky</a>}
+        {cfg.instagram_url && <a className="chip" href={cfg.instagram_url} target="_blank" rel="noopener">Instagram</a>}
+        {cfg.tiktok_url && <a className="chip" href={cfg.tiktok_url} target="_blank" rel="noopener">TikTok</a>}
         {cfg.youtube_url && <a className="chip" href={cfg.youtube_url} target="_blank" rel="noopener">YouTube</a>}
       </div>
 

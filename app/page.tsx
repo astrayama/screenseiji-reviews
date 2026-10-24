@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { getHomeData } from "@/lib/queries";
+import { splitTags } from "@/lib/util";
 import { Ticker } from "@/components/Ticker";
 import { TagChip } from "@/components/TagChip";
 import { PosterImg } from "@/components/PosterImg";
@@ -39,8 +40,9 @@ export default async function HomePage() {
                 <span style={{ fontSize: "0.55em" }}>({featured.rootTitle.year})</span>
               )}
             </h1>
+            {/* moods lead, and their fill sets them apart from the genres */}
             <div className="row" style={{ flexWrap: "wrap", gap: 6 }}>
-              {featured.tags.map((t) => (
+              {[...splitTags(featured.tags).moods, ...splitTags(featured.tags).genres].map((t) => (
                 <TagChip key={t.id} tag={t} />
               ))}
             </div>
@@ -119,7 +121,12 @@ export default async function HomePage() {
           </h2>
           {fresh.length ? (
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(170px, 1fr))", gap: 14 }}>
-              {fresh.map((c, i) => (
+              {fresh.map((c, i) => {
+                const { moods, genres } = splitTags(c.tags);
+                /* one of each kind, so a mood is never crowded out by two
+                   genres. Spans, not links — the whole card is already one. */
+                const chips = [...moods.slice(0, 1), ...genres.slice(0, 1)];
+                return (
                 <Link
                   key={c.review.id}
                   href={c.href}
@@ -129,15 +136,20 @@ export default async function HomePage() {
                   <PosterImg src={c.posterUrl} alt={c.displayName} />
                   <b style={{ color: "var(--bright)", fontSize: 14, lineHeight: 1.3 }}>{c.displayName}</b>
                   <div className="row" style={{ flexWrap: "wrap", gap: 4 }}>
-                    {c.tags.slice(0, 2).map((t) => (
-                      <span key={t.id} className="chip chip--tag" style={{ ["--c" as string]: t.color, fontSize: 9, padding: "2px 8px" }}>
+                    {chips.map((t) => (
+                      <span
+                        key={t.id}
+                        className={`chip chip--tag${t.kind === "mood" ? " chip--mood" : ""}`}
+                        style={{ ["--c" as string]: t.color, fontSize: 9, padding: "2px 8px" }}
+                      >
                         {t.name}
                       </span>
                     ))}
                   </div>
                   <Score score={c.score} emoji={c.emoji} variant="inline" />
                 </Link>
-              ))}
+                );
+              })}
             </div>
           ) : (
             <p className="mono-note">reviews will gather here once they exist</p>

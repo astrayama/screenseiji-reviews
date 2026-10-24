@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState, useCallback, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { Score } from "./Score";
+import { splitTags } from "@/lib/util";
 
 type Results = {
   franchises: { franchise: { slug: string; name: string }; count: number }[];
@@ -11,7 +12,7 @@ type Results = {
 };
 type TitleHit = {
   title: { slug: string; name: string; year: number | null; kind: string; poster_url: string | null };
-  tags: { id: string; name: string; color: string }[];
+  tags: { id: string; name: string; color: string; kind: "genre" | "mood" }[];
   score: number | null;
   emoji: string | null;
 };
@@ -177,15 +178,17 @@ export function SearchOverlay({ onClose }: { onClose: () => void }) {
                           )}
                           <b style={{ color: "var(--bright)", fontSize: 14 }}>{h.title.name}</b>
                           {h.title.year && <span className="chip">{h.title.year}</span>}
-                          {h.tags.slice(0, 2).map((t) => (
-                            <span
-                              key={t.id}
-                              className="chip chip--tag"
-                              style={{ ["--c" as string]: t.color, fontSize: 9, padding: "2px 8px" }}
-                            >
-                              {t.name}
-                            </span>
-                          ))}
+                          {[...splitTags(h.tags).moods, ...splitTags(h.tags).genres]
+                            .slice(0, 2)
+                            .map((t) => (
+                              <span
+                                key={t.id}
+                                className={`chip chip--tag${t.kind === "mood" ? " chip--mood" : ""}`}
+                                style={{ ["--c" as string]: t.color, fontSize: 9, padding: "2px 8px" }}
+                              >
+                                {t.name}
+                              </span>
+                            ))}
                           <Score
                             score={h.score}
                             emoji={h.emoji}

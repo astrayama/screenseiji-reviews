@@ -522,33 +522,52 @@ function ReviewEditor({
       </div>
 
       {/* tags live on the root title */}
-      <div className="col" style={{ gap: 6 }}>
+      <div className="col" style={{ gap: 8 }}>
         <div className="row between">
           <span className="label" style={{ fontSize: 10 }}>Tags</span>
           <span className="mono-note" style={{ fontSize: 10 }}>
             moods are yours to invent · genres come from the database
           </span>
         </div>
-        <div className="row" style={{ flexWrap: "wrap", gap: 5 }}>
-          {tags.map((t) => {
-            const on = myTagIds.has(t.id);
-            return (
-              <button
-                key={t.id}
-                className={`chip chip--tag${on ? " is-active" : ""}`}
-                style={{
-                  ["--c" as string]: t.color,
-                  cursor: "pointer",
-                  background: on ? `color-mix(in srgb, ${t.color} 25%, transparent)` : "none",
-                }}
-                onClick={() => toggleTag(t.id)}
-              >
-                {t.name} {on ? "✓" : ""}
-              </button>
-            );
-          })}
-          <NewMoodChip titleId={title.id} existing={tags} onChanged={onChanged} />
-        </div>
+        {/* the Moods group renders even when empty — it's where ＋ new mood lives */}
+        {(["mood", "genre"] as const).map((kind) => {
+          const group = tags.filter((t) => t.kind === kind);
+          return (
+            <div className="col" key={kind} style={{ gap: 5 }}>
+              <span className="label" style={{ fontSize: 9.5 }}>
+                {kind === "mood" ? "Moods" : "Genres"}
+              </span>
+              <div className="row" style={{ flexWrap: "wrap", gap: 5 }}>
+                {group.map((t) => {
+                  const on = myTagIds.has(t.id);
+                  return (
+                    <button
+                      key={t.id}
+                      className={`chip chip--tag${on ? " is-active" : ""}`}
+                      style={{
+                        ["--c" as string]: t.color,
+                        cursor: "pointer",
+                        background: on ? `color-mix(in srgb, ${t.color} 25%, transparent)` : "none",
+                      }}
+                      onClick={() => toggleTag(t.id)}
+                    >
+                      {t.name} {on ? "✓" : ""}
+                    </button>
+                  );
+                })}
+                {kind === "mood" ? (
+                  <NewMoodChip titleId={title.id} existing={tags} onChanged={onChanged} />
+                ) : (
+                  !group.length && (
+                    <span className="mono-note" style={{ fontSize: 10 }}>
+                      genres arrive with a TMDB import
+                    </span>
+                  )
+                )}
+              </div>
+            </div>
+          );
+        })}
       </div>
 
       {/* score + sub-scores */}
@@ -692,7 +711,7 @@ function ReviewEditor({
           <span className="label" style={{ fontSize: 10 }}>Preview</span>
           {form.verdict && <p style={{ margin: 0, color: "var(--bright)" }}>{form.verdict}</p>}
           <div className="prose" dangerouslySetInnerHTML={{ __html: marked.parse(form.body_spoiler_free || "*nothing yet*") as string }} />
-          {form.pull_quote && <div className="pull-quote">“{form.pull_quote}”</div>}
+          {form.pull_quote && <div className="pull-quote">{form.pull_quote}</div>}
           {form.body_spoilers && (
             <>
               <span className="label" style={{ fontSize: 10 }}>Spoiler zone</span>

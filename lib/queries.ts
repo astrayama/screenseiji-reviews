@@ -591,7 +591,8 @@ export type SiteConfig = {
   motto?: string;
   contact_email?: string;
   press_kit_url?: string;
-  bluesky_url?: string;
+  instagram_url?: string;
+  tiktok_url?: string;
   youtube_url?: string;
   photo_url?: string;
 };

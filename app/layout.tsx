@@ -8,8 +8,8 @@ import "./globals.css";
 
 const cormorant = Cormorant_Garamond({
   subsets: ["latin"],
-  weight: ["500", "600", "700"],
-  style: ["normal", "italic"],
+  weight: ["700"],
+  style: ["italic"],
   variable: "--font-cormorant",
 });
 
@@ -40,8 +40,8 @@ export async function generateMetadata(): Promise<Metadata> {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en">
-      <body className={cormorant.variable}>
+    <html lang="en" className={cormorant.variable}>
+      <body>
         <ViewTracker />
         <SiteHeader />
         <main>{children}</main>

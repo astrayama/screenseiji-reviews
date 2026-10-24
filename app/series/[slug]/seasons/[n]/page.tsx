@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { getSeasonPage, episodeHref } from "@/lib/queries";
 import { renderMarkdown } from "@/lib/markdown";
-import { TagChip } from "@/components/TagChip";
+import { TagRows } from "@/components/TagRows";
 import { PosterImg } from "@/components/PosterImg";
 import { EpisodeRows, EpisodeRowData } from "@/components/EpisodeRows";
 import { SubScoreBars } from "@/components/SubScoreBars";
@@ -92,10 +92,8 @@ export default async function SeasonPage({ params }: Props) {
               style={{ fontSize: 15, flex: "none" }}
             />
           </div>
+          <TagRows tags={series.tags} />
           <div className="row" style={{ flexWrap: "wrap", gap: 6 }}>
-            {series.tags.map((t) => (
-              <TagChip key={t.id} tag={t} />
-            ))}
             {entry.season.episode_count && <span className="chip">{entry.season.episode_count} eps</span>}
             {entry.season.year && <span className="chip">{entry.season.year}</span>}
           </div>

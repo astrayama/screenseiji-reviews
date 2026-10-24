@@ -36,6 +36,16 @@ export function avg(nums: number[]): number | null {
 }
 
 // Default pastel palette for tags — from the design's chip colors.
+/* Moods are Isa's own vocabulary; genres come from TMDB. Every surface that
+   shows both keeps them apart, so the split lives in one place. Generic over
+   the row shape so the desk's own tag type works here too. */
+export function splitTags<T extends { kind: "genre" | "mood" }>(tags: T[]): { moods: T[]; genres: T[] } {
+  return {
+    moods: tags.filter((t) => t.kind === "mood"),
+    genres: tags.filter((t) => t.kind === "genre"),
+  };
+}
+
 export const TAG_COLORS = ["#b3e6ff", "#ffb8d9", "#ffd9a8", "#c9a8e8", "#b8ffe3"];
 
 export function pickTagColor(index: number): string {

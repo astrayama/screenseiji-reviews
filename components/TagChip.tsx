@@ -17,7 +17,7 @@ export function TagChip({
   return (
     <Link
       href={target}
-      className={`chip chip--tag${active ? " is-active" : ""}`}
+      className={`chip chip--tag${tag.kind === "mood" ? " chip--mood" : ""}${active ? " is-active" : ""}`}
       style={{ ["--c" as string]: tag.color }}
     >
       {tag.name}

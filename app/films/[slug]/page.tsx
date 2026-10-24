@@ -4,7 +4,7 @@ import type { Metadata } from "next";
 import { getFilmPage } from "@/lib/queries";
 import { renderMarkdown } from "@/lib/markdown";
 import { fmtRuntime, fmtDate } from "@/lib/util";
-import { TagChip } from "@/components/TagChip";
+import { TagRows } from "@/components/TagRows";
 import { PosterImg } from "@/components/PosterImg";
 import { Score } from "@/components/Score";
 import { normalizeEmoji } from "@/lib/emoji";
@@ -83,18 +83,21 @@ export default async function FilmPage({ params }: Props) {
         {title.name}
       </nav>
 
-      <header className="col" style={{ gap: 12 }}>
-        <h1 className="ttl" style={{ fontSize: "clamp(32px, 5vw, 46px)" }}>
-          {title.name}{" "}
-          {title.year && <span style={{ fontSize: "0.55em" }}>({title.year})</span>}
-        </h1>
-        {/* tags first, right under the title */}
-        <div className="row" style={{ flexWrap: "wrap", gap: 6 }}>
-          {tags.map((t) => (
-            <TagChip key={t.id} tag={t} />
-          ))}
-          {runtime && <span className="chip">{runtime}</span>}
-          {review.published_at && <span className="chip">{fmtDate(review.published_at)}</span>}
+      <header className="row" style={{ gap: 20, alignItems: "flex-start" }}>
+        <div style={{ width: 110, flex: "none" }}>
+          <PosterImg src={title.poster_url} alt={title.name} />
+        </div>
+        <div className="col" style={{ gap: 12, flex: 1 }}>
+          <h1 className="ttl" style={{ fontSize: "clamp(32px, 5vw, 46px)" }}>
+            {title.name}{" "}
+            {title.year && <span style={{ fontSize: "0.55em" }}>({title.year})</span>}
+          </h1>
+          {/* tags first, right under the title */}
+          <TagRows tags={tags} />
+          <div className="row" style={{ flexWrap: "wrap", gap: 6 }}>
+            {runtime && <span className="chip">{runtime}</span>}
+            {review.published_at && <span className="chip">{fmtDate(review.published_at)}</span>}
+          </div>
         </div>
       </header>
 
@@ -134,7 +137,7 @@ export default async function FilmPage({ params }: Props) {
         <section className="col" style={{ gap: 8 }}>
           {spoilerFreeHtml && <span className="label">Spoiler-free</span>}
           {spoilerFreeHtml && <div className="prose" dangerouslySetInnerHTML={{ __html: spoilerFreeHtml }} />}
-          {review.pull_quote && <div className="pull-quote">“{review.pull_quote}”</div>}
+          {review.pull_quote && <div className="pull-quote">{review.pull_quote}</div>}
         </section>
       )}
 

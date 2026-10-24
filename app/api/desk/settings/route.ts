@@ -4,7 +4,7 @@ import { adminDb } from "@/lib/supabase";
 
 const KEYS = [
   "critic_name", "tagline", "bio", "how_i_score", "established", "motto",
-  "contact_email", "press_kit_url", "bluesky_url", "youtube_url", "photo_url",
+  "contact_email", "press_kit_url", "instagram_url", "tiktok_url", "youtube_url", "photo_url",
 ];
 
 export async function GET() {

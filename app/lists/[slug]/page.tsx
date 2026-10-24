@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { getList, titleHref } from "@/lib/queries";
+import { splitTags } from "@/lib/util";
 import { PosterImg } from "@/components/PosterImg";
 import { Score } from "@/components/Score";
 
@@ -56,11 +57,17 @@ export default async function ListPage({ params }: Props) {
                   {e.title.year && <span className="mono-note" style={{ marginLeft: 8, fontSize: 11 }}>{e.title.year}</span>}
                 </b>
                 <div className="row" style={{ gap: 4, flexWrap: "wrap" }}>
-                  {e.tags.slice(0, 3).map((t) => (
-                    <span key={t.id} className="chip chip--tag" style={{ ["--c" as string]: t.color, fontSize: 9, padding: "1px 7px" }}>
-                      {t.name}
-                    </span>
-                  ))}
+                  {[...splitTags(e.tags).moods, ...splitTags(e.tags).genres]
+                    .slice(0, 3)
+                    .map((t) => (
+                      <span
+                        key={t.id}
+                        className={`chip chip--tag${t.kind === "mood" ? " chip--mood" : ""}`}
+                        style={{ ["--c" as string]: t.color, fontSize: 9, padding: "1px 7px" }}
+                      >
+                        {t.name}
+                      </span>
+                    ))}
                 </div>
                 {e.blurb && <p className="mono-note" style={{ margin: 0 }}>{e.blurb}</p>}
               </div>

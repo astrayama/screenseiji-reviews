@@ -12,7 +12,8 @@ const FIELDS: { key: string; label: string; kind: "input" | "textarea"; hint?: s
   { key: "motto", label: "Motto chip", kind: "input", hint: "defaults to “no algorithms, one voice”" },
   { key: "contact_email", label: "Contact email (for editors)", kind: "input" },
   { key: "press_kit_url", label: "Press kit URL", kind: "input", hint: "link to a PDF or folder" },
-  { key: "bluesky_url", label: "Bluesky URL", kind: "input" },
+  { key: "instagram_url", label: "Instagram URL", kind: "input" },
+  { key: "tiktok_url", label: "TikTok URL", kind: "input" },
   { key: "youtube_url", label: "YouTube URL", kind: "input" },
 ];
 

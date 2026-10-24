@@ -4,7 +4,7 @@ import type { Metadata } from "next";
 import { getEpisodePage, episodeHref, episodeTitle, seasonHref } from "@/lib/queries";
 import { renderMarkdown } from "@/lib/markdown";
 import { fmtDate } from "@/lib/util";
-import { TagChip } from "@/components/TagChip";
+import { TagRows } from "@/components/TagRows";
 import { PosterImg } from "@/components/PosterImg";
 import { Score } from "@/components/Score";
 import { SubScoreBars } from "@/components/SubScoreBars";
@@ -112,10 +112,8 @@ export default async function EpisodePage({ params }: Props) {
           <h1 className="ttl" style={{ fontSize: "clamp(26px, 4vw, 38px)" }}>
             <span style={{ fontSize: "0.5em" }}>{label}</span> {name}
           </h1>
+          <TagRows tags={series.tags} />
           <div className="row" style={{ flexWrap: "wrap", gap: 6 }}>
-            {series.tags.map((t) => (
-              <TagChip key={t.id} tag={t} />
-            ))}
             {isPeak && (
               <span className="chip chip--tag" style={{ ["--c" as string]: "var(--amber)" }}>
                 season peak
@@ -160,7 +158,7 @@ export default async function EpisodePage({ params }: Props) {
         <section className="col" style={{ gap: 8 }}>
           {bodyHtml && <span className="label">Spoiler-free</span>}
           {bodyHtml && <div className="prose" dangerouslySetInnerHTML={{ __html: bodyHtml }} />}
-          {review.pull_quote && <div className="pull-quote">“{review.pull_quote}”</div>}
+          {review.pull_quote && <div className="pull-quote">{review.pull_quote}</div>}
         </section>
       )}
 

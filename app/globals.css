@@ -28,6 +28,7 @@
   --sky: #b3e6ff;
   --mint: #b8ffe3;
 
+  /* accent face — the pull quote only; the sans below is the main font */
   --serif: var(--font-cormorant), "Cormorant Garamond", Georgia, serif;
   --mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
   --sans: system-ui, -apple-system, "Segoe UI", sans-serif;
@@ -56,7 +57,7 @@ a { color: inherit; text-decoration: none; }
 /* ---------- type ---------- */
 
 .logo {
-  font: 600 20px/1 var(--serif);
+  font: 20px/1 var(--sans);
   letter-spacing: 3px;
   background: linear-gradient(90deg, var(--pink), #b3a6ff, var(--amber));
   -webkit-background-clip: text;
@@ -66,7 +67,7 @@ a { color: inherit; text-decoration: none; }
 }
 
 .ttl {
-  font-family: var(--serif);
+  font-family: var(--sans);
   font-style: italic;
   font-weight: 600;
   color: #fff;
@@ -109,6 +110,10 @@ a.chip:hover, button.chip:hover { transform: translateY(-1px); }
 a.chip--tag:hover, button.chip--tag:hover, .chip--tag.is-active {
   box-shadow: 0 0 12px color-mix(in srgb, var(--c, var(--lav)) 45%, transparent);
 }
+/* Tag colours are handed out round-robin regardless of kind, so colour alone
+   can't tell a mood from a genre. Genres keep the plain outline; moods get a
+   fill, the same cue the desk already uses for a selected chip. */
+.chip--mood { background: color-mix(in srgb, var(--c, var(--lav)) 18%, transparent); }
 .chip--solid { background: var(--amber); color: var(--bg); border-color: var(--amber); font-weight: 600; }
 .chip--solid:hover { box-shadow: 0 0 14px rgba(255, 217, 168, 0.5); }
 
@@ -297,14 +302,14 @@ a.chip--tag:hover, button.chip--tag:hover, .chip--tag.is-active {
 /* ---------- review prose ---------- */
 
 .prose {
-  font-family: var(--serif);
+  font-family: var(--sans);
   font-size: 19.5px;
   line-height: 1.62;
   color: var(--bright);
 }
 .prose p { margin: 0 0 1.1em; }
 .prose a { color: var(--amber); border-bottom: 1px solid rgba(255, 217, 168, 0.4); }
-.prose h2, .prose h3 { font-family: var(--serif); font-style: italic; color: #fff; margin: 1.4em 0 0.5em; }
+.prose h2, .prose h3 { font-family: var(--sans); font-style: italic; color: #fff; margin: 1.4em 0 0.5em; }
 .prose blockquote {
   margin: 1.4em 0;
   padding-left: 16px;
@@ -318,12 +323,34 @@ a.chip--tag:hover, button.chip--tag:hover, .chip--tag.is-active {
 .prose ul, .prose ol { padding-left: 1.3em; }
 .prose img { max-width: 100%; border-radius: 8px; }
 
+/* The one place the serif appears. A pull quote should land like a headline,
+   not like body copy, so it gets the accent face at display size and a big
+   amber open-quote in place of the old hairline rule. The quote marks live
+   here rather than in the markup, so the opening one can be decorative. */
 .pull-quote {
-  font: 600 italic 28px/1.3 var(--serif);
+  position: relative;
+  font-family: var(--serif);
+  font-style: italic;
+  font-weight: 700;
+  font-size: clamp(30px, 4.2vw, 44px);
+  line-height: 1.12;
+  letter-spacing: -0.015em;
   color: #fff;
-  border-left: 2px solid var(--amber);
-  padding-left: 18px;
-  margin: 26px 0;
+  margin: 34px 0;
+  padding-left: 0.78em;
+  text-wrap: balance;
+}
+
+.pull-quote::before {
+  content: "\201C";
+  position: absolute;
+  left: -0.08em;
+  top: 0.3em;
+  font-size: 2.2em;
+  line-height: 0;
+  color: var(--amber);
+  opacity: 0.55;
+  pointer-events: none;
 }
 
 /* ---------- reveal on scroll ---------- */
