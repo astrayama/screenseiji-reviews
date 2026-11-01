@@ -17,17 +17,18 @@ export type EpisodeRowData = {
    The id={"e"+n} anchors are kept so older shared links still land nearby. */
 export function EpisodeRows({ episodes }: { episodes: EpisodeRowData[] }) {
   return (
-    <div className="col" style={{ gap: 8 }}>
+    <div className="gl col" style={{ padding: "8px 10px", gap: 2 }}>
       {episodes.map((e) => {
         const inner = (
           <>
-            <span style={{ color: e.href ? "var(--bright)" : "var(--muted)", fontSize: 14.5 }}>
-              <b style={{ font: "600 12.5px var(--mono)" }}>E{String(e.number).padStart(2, "0")}</b>
-              {" — "}
-              {episodeTitle(e.name, e.number)}
+            <span style={{ color: e.href ? "var(--bright)" : "var(--muted)", fontSize: 15 }}>
+              <b style={{ font: "500 13px var(--sans)", color: e.isPeak ? "var(--amber)" : "var(--faint)", marginRight: 14 }}>
+                E{String(e.number).padStart(2, "0")}
+              </b>
+              <span style={{ fontFamily: "var(--display)", fontWeight: 700 }}>{episodeTitle(e.name, e.number)}</span>
               {e.isPeak && (
-                <span className="chip chip--tag" style={{ ["--c" as string]: "var(--amber)", marginLeft: 8 }}>
-                  season peak
+                <span className="chip chip--tag chip--mood" style={{ ["--c" as string]: "var(--amber)", marginLeft: 10, fontSize: 12, padding: "3px 10px" }}>
+                  ✦ season peak
                 </span>
               )}
             </span>
@@ -54,11 +55,13 @@ export function EpisodeRows({ episodes }: { episodes: EpisodeRowData[] }) {
 
         const shared = {
           id: `e${e.number}`,
-          className: e.isPeak ? "gl gl--amber row between" : "row between",
+          className: "row between",
           style: {
-            padding: e.isPeak ? "10px 14px" : "6px 2px",
+            padding: "14px 14px",
             gap: 12,
             alignItems: "baseline" as const,
+            borderRadius: 14,
+            background: e.isPeak ? "color-mix(in srgb, var(--amber) 8%, transparent)" : undefined,
             scrollMarginTop: 80,
           },
         };

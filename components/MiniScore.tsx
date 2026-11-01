@@ -26,7 +26,7 @@ export function MiniScore({
   }, []);
   return (
     <div className={`mini-score row${on ? " is-on" : ""}`} aria-hidden={!on}>
-      <span style={{ font: "600 11px var(--mono)", color: "var(--muted)" }}>{name}</span>
+      <span style={{ font: "700 13px var(--display)", color: "var(--text)" }}>{name}</span>
       {/* inline, not pill — the wrapper already draws the amber pill */}
       <Score score={score} emoji={emoji} variant="inline" layout="row" />
     </div>

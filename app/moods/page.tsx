@@ -12,8 +12,8 @@ export const metadata: Metadata = {
 export default async function MoodsPage() {
   const moods = await getMoodCounts();
   return (
-    <div className="wrap col" style={{ gap: 22, maxWidth: 720 }}>
-      <h1 className="ttl" style={{ fontSize: "clamp(28px, 4vw, 38px)" }}>Browse by mood</h1>
+    <div className="wrap col" style={{ gap: 28, maxWidth: 880 }}>
+      <h1 className="ttl" style={{ fontSize: "clamp(34px, 4.5vw, 48px)" }}>Browse by mood</h1>
       {moods.length ? (
         <div className="row" style={{ flexWrap: "wrap", gap: 10 }}>
           {moods.map((m) => (

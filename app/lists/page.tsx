@@ -13,21 +13,21 @@ export const metadata: Metadata = {
 export default async function ListsPage() {
   const lists = await getLists();
   return (
-    <div className="wrap col" style={{ gap: 22 }}>
+    <div className="wrap col" style={{ gap: 28 }}>
       <nav className="crumb">Lists</nav>
-      <h1 className="ttl" style={{ fontSize: "clamp(28px, 4vw, 38px)" }}>Lists</h1>
+      <h1 className="ttl" style={{ fontSize: "clamp(34px, 4.5vw, 48px)" }}>Lists</h1>
       {lists.length ? (
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(210px, 1fr))", gap: 14 }}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(260px, 1fr))", gap: 20 }}>
           {lists.map((l) => (
             <Link
               key={l.id}
               href={`/lists/${l.slug}`}
               className="gl col"
-              style={{ padding: 14, gap: 8, borderColor: `color-mix(in srgb, ${l.accent} 45%, transparent)` }}
+              style={{ padding: 22, gap: 12, borderColor: `color-mix(in srgb, ${l.accent} 30%, var(--line))` }}
             >
               <div className="row" style={{ gap: 0 }}>
                 {l.entries.slice(0, 3).map((e, i) => (
-                  <div key={i} style={{ width: 40, marginLeft: i ? -18 : 0 }}>
+                  <div key={i} style={{ width: 64, marginLeft: i ? -24 : 0 }}>
                     <PosterImg src={e.title?.poster_url} alt="" />
                   </div>
                 ))}
@@ -35,8 +35,8 @@ export default async function ListsPage() {
                   <span className="mono-note" style={{ color: "var(--ghost)" }}>(empty so far)</span>
                 )}
               </div>
-              <b style={{ color: "var(--bright)", fontSize: 15 }}>{l.name}</b>
-              <span className="mono-note" style={{ fontSize: 10.5 }}>
+              <b style={{ font: "800 19px/1.25 var(--display)", color: "var(--bright)" }}>{l.name}</b>
+              <span className="mono-note">
                 {l.entries.length} {l.entries.length === 1 ? "entry" : "entries"}
               </span>
             </Link>

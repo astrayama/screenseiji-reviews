@@ -46,15 +46,15 @@ export default async function ArchivePage({ searchParams }: Props) {
   const { items, genres, moods, totalReviews } = await getArchive(filters);
 
   return (
-    <div className="wrap col" style={{ gap: 20 }}>
-      <div className="row between" style={{ alignItems: "baseline" }}>
-        <h1 className="ttl" style={{ fontSize: "clamp(28px, 4vw, 38px)" }}>The Archive</h1>
+    <div className="wrap col" style={{ gap: 32 }}>
+      <div className="row between" style={{ alignItems: "baseline", flexWrap: "wrap" }}>
+        <h1 className="ttl" style={{ fontSize: "clamp(34px, 4.5vw, 48px)" }}>The Archive</h1>
         <span className="mono-note">{totalReviews} review{totalReviews === 1 ? "" : "s"}</span>
       </div>
 
-      <div style={{ display: "grid", gridTemplateColumns: "180px 1fr", gap: 26 }} className="archive-grid">
+      <div style={{ display: "grid", gridTemplateColumns: "250px 1fr", gap: 36, alignItems: "start" }} className="archive-grid">
         {/* filters */}
-        <aside className="col" style={{ gap: 18 }}>
+        <aside className="gl col" style={{ gap: 22, padding: 22 }}>
           <div className="col" style={{ gap: 7 }}>
             <span className="label" style={{ fontSize: 10 }}>Type</span>
             <div className="row" style={{ flexWrap: "wrap", gap: 5 }}>
@@ -123,13 +123,13 @@ export default async function ArchivePage({ searchParams }: Props) {
         {items.length ? (
           <div className="grid-posters cascade">
             {items.map((i) => (
-              <Link key={i.title.id} href={titleHref(i.title)} className="tiltable col" style={{ gap: 6 }}>
-                <PosterImg src={i.title.poster_url} alt={i.title.name} />
-                <b style={{ fontSize: 13, color: "var(--bright)", lineHeight: 1.3 }}>{i.title.name}</b>
-                <span className="row mono-note" style={{ fontSize: 10.5, gap: 6 }}>
-                  {i.title.year ?? ""}
-                  <Score score={i.score} emoji={i.emoji} variant="inline" style={{ fontSize: 11 }} />
-                </span>
+              <Link key={i.title.id} href={titleHref(i.title)} className="tiltable col" style={{ gap: 10 }}>
+                <div className="poster-frame">
+                  <PosterImg src={i.title.poster_url} alt={i.title.name} />
+                  <Score score={i.score} emoji={i.emoji} variant="pill" style={{ fontSize: 13 }} />
+                </div>
+                <b style={{ font: "700 16px/1.25 var(--display)", color: "var(--bright)" }}>{i.title.name}</b>
+                {i.title.year && <span className="mono-note">{i.title.year}</span>}
               </Link>
             ))}
           </div>

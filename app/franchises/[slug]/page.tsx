@@ -45,14 +45,15 @@ export default async function FranchisePage({ params }: Props) {
   });
 
   return (
-    <div className="wrap col" style={{ gap: 24 }}>
+    <div className="wrap col" style={{ gap: 36 }}>
       <nav className="crumb" aria-label="Breadcrumb">
-        <Link href="/archive?type=film">Films</Link> → Franchises → {franchise.name}
+        <Link href="/archive?type=film">Films</Link> › Franchises › {franchise.name}
       </nav>
 
       <header className="row between" style={{ alignItems: "flex-end", flexWrap: "wrap", gap: 14 }}>
-        <div className="col" style={{ gap: 8 }}>
-          <h1 className="ttl" style={{ fontSize: "clamp(30px, 4.5vw, 40px)" }}>{franchise.name}</h1>
+        <div className="col" style={{ gap: 14 }}>
+          <span className="label">Franchise</span>
+          <h1 className="ttl" style={{ fontSize: "clamp(34px, 5vw, 52px)" }}>{franchise.name}</h1>
           <div className="row" style={{ flexWrap: "wrap", gap: 6 }}>
             {tags.map((t) => (
               <TagChip key={t.id} tag={t} />
@@ -62,13 +63,13 @@ export default async function FranchisePage({ params }: Props) {
             </span>
           </div>
           {franchise.description && (
-            <p style={{ margin: 0, color: "var(--muted)", maxWidth: 560 }}>{franchise.description}</p>
+            <p style={{ margin: 0, color: "var(--text)", fontSize: 16, maxWidth: 620 }}>{franchise.description}</p>
           )}
         </div>
         {average !== null && (
-          <div className="col" style={{ alignItems: "center", gap: 2 }}>
-            <span className="sc" style={{ fontSize: 16 }}>{average.toFixed(1)}</span>
-            <span className="mono-note" style={{ fontSize: 10 }}>franchise avg</span>
+          <div className="col hero-score" style={{ alignItems: "center", gap: 6 }}>
+            <span className="verdict-score" style={{ fontSize: 44 }}>{average.toFixed(1)}</span>
+            <span className="mono-note">franchise avg</span>
           </div>
         )}
       </header>
@@ -76,25 +77,25 @@ export default async function FranchisePage({ params }: Props) {
       <FranchiseShelf items={shelfItems} />
 
       <Reveal>
-        <section className="col" style={{ gap: 10 }}>
-          <span className="label">Every review</span>
+        <section className="col" style={{ gap: 14 }}>
+          <h2 className="sec-title" style={{ fontSize: 24 }}>Every review</h2>
           {reviews.length ? (
             reviews.map((c) => (
-              <Link key={c.review.id} href={c.href} className="gl row between" style={{ padding: "10px 14px" }}>
-                <div className="row">
-                  <div style={{ width: 30, flex: "none" }}>
+              <Link key={c.review.id} href={c.href} className="gl row between" style={{ padding: "14px 20px" }}>
+                <div className="row" style={{ gap: 16 }}>
+                  <div style={{ width: 44, flex: "none" }}>
                     <PosterImg src={c.posterUrl} alt="" />
                   </div>
-                  <div className="col" style={{ gap: 4 }}>
-                    <b style={{ color: "var(--bright)", fontSize: 14.5 }}>{c.displayName}</b>
-                    <div className="row" style={{ gap: 4 }}>
+                  <div className="col" style={{ gap: 6 }}>
+                    <b style={{ font: "700 16px/1.3 var(--display)", color: "var(--bright)" }}>{c.displayName}</b>
+                    <div className="row" style={{ gap: 6, flexWrap: "wrap" }}>
                       {[...splitTags(c.tags).moods, ...splitTags(c.tags).genres]
                         .slice(0, 3)
                         .map((t) => (
                           <span
                             key={t.id}
                             className={`chip chip--tag${t.kind === "mood" ? " chip--mood" : ""}`}
-                            style={{ ["--c" as string]: t.color, fontSize: 9, padding: "1px 7px" }}
+                            style={{ ["--c" as string]: t.color, fontSize: 12, padding: "3px 10px" }}
                           >
                             {t.name}
                           </span>

@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { headers } from "next/headers";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { getSeasonPage, episodeHref } from "@/lib/queries";
@@ -10,6 +11,8 @@ import { SubScoreBars } from "@/components/SubScoreBars";
 import { Score } from "@/components/Score";
 import { SpoilerZone } from "@/components/SpoilerZone";
 import { Reveal } from "@/components/Reveal";
+import { LikeButton } from "@/components/LikeButton";
+import { getLikeState, voterFromHeaders } from "@/lib/likes";
 
 export const dynamic = "force-dynamic";
 
@@ -33,6 +36,10 @@ export default async function SeasonPage({ params }: Props) {
   if (!data) notFound();
   const { series, entry, episodes, subScores, peak } = data;
   const seasonReview = entry.seasonReview;
+  // only a reviewed season has something to like
+  const likes = seasonReview
+    ? await getLikeState(seasonReview.review.id, voterFromHeaders(await headers()))
+    : null;
 
   const rows: EpisodeRowData[] = episodes.map((e) => ({
     number: e.episode.number,
@@ -50,84 +57,88 @@ export default async function SeasonPage({ params }: Props) {
     : null;
 
   return (
-    <div className="wrap col" style={{ gap: 22, maxWidth: 780 }}>
-      <nav className="crumb" aria-label="Breadcrumb">
-        <Link href="/archive?type=series">Series</Link> →{" "}
-        <Link href={`/series/${series.title.slug}`}>{series.title.name}</Link> → Season {num}
-      </nav>
+    <div className="wrap col" style={{ gap: 36 }}>
+      <div className="col" style={{ gap: 28 }}>
+        <nav className="crumb" aria-label="Breadcrumb">
+          <Link href="/archive?type=series">Series</Link> ›{" "}
+          <Link href={`/series/${series.title.slug}`}>{series.title.name}</Link> › Season {num}
+        </nav>
 
-      <header className="row" style={{ gap: 18, alignItems: "flex-start" }}>
-        <div style={{ width: 110, flex: "none" }}>
-          {/* the season's own art where TMDB gave us one, else the series' */}
-          <PosterImg
-            src={entry.season.poster_url ?? series.title.poster_url}
-            alt={`${series.title.name} season ${num}`}
-          />
-        </div>
-        <div className="col" style={{ gap: 8, flex: 1 }}>
-          <div className="row between" style={{ alignItems: "flex-start", gap: 12 }}>
-            <div className="col" style={{ gap: 4 }}>
-              <h1 className="ttl" style={{ fontSize: "clamp(28px, 4.5vw, 40px)" }}>
-                <Link href={`/series/${series.title.slug}`}>{series.title.name}</Link>
-              </h1>
-              <p
-                style={{
-                  margin: 0,
-                  font: "600 15px var(--mono)",
-                  letterSpacing: 1,
-                  color: "var(--amber)",
-                }}
-              >
-                Season {num}
-                {entry.season.name && entry.season.name !== `Season ${num}` && (
-                  <span style={{ color: "var(--muted)" }}> — {entry.season.name}</span>
-                )}
-              </p>
-            </div>
-            <Score
-              score={seasonReview?.score ?? null}
-              emoji={seasonReview?.emoji ?? null}
-              variant="pill"
-              empty="dash"
-              style={{ fontSize: 15, flex: "none" }}
+        <header className="page-head">
+          <div className="poster-col">
+            {/* the season's own art where TMDB gave us one, else the series' */}
+            <PosterImg
+              src={entry.season.poster_url ?? series.title.poster_url}
+              alt={`${series.title.name} season ${num}`}
             />
           </div>
-          <TagRows tags={series.tags} />
-          <div className="row" style={{ flexWrap: "wrap", gap: 6 }}>
-            {entry.season.episode_count && <span className="chip">{entry.season.episode_count} eps</span>}
-            {entry.season.year && <span className="chip">{entry.season.year}</span>}
+          <div className="col" style={{ gap: 14, flex: 1, minWidth: 0 }}>
+            <p className="label" style={{ margin: 0 }}>
+              Season {num}
+              {entry.season.name && entry.season.name !== `Season ${num}` && (
+                <span style={{ color: "var(--muted)" }}> — {entry.season.name}</span>
+              )}
+            </p>
+            <h1 className="ttl" style={{ fontSize: "clamp(34px, 5vw, 52px)" }}>
+              <Link href={`/series/${series.title.slug}`}>{series.title.name}</Link>
+            </h1>
+            {(entry.season.episode_count || entry.season.year) && (
+              <div className="meta-line">
+                {entry.season.episode_count && <span>{entry.season.episode_count} eps</span>}
+                {entry.season.year && <span>{entry.season.year}</span>}
+              </div>
+            )}
+            <TagRows tags={series.tags} />
           </div>
-        </div>
-      </header>
+        </header>
+      </div>
 
       <hr className="hr" />
 
-      {rows.length ? (
-        <EpisodeRows episodes={rows} />
-      ) : (
-        <p className="mono-note">no episodes on record for this season yet</p>
-      )}
+      <div className="review-grid">
+        <div className="review-main col" style={{ gap: 36 }}>
+          {rows.length ? (
+            <EpisodeRows episodes={rows} />
+          ) : (
+            <p className="mono-note">no episodes on record for this season yet</p>
+          )}
 
-      {seasonReview && (
-        <Reveal>
-          <section className="gl col" style={{ padding: 16, gap: 8 }}>
-            <span className="label">Season verdict</span>
-            {seasonReview.review.verdict && (
-              <p style={{ margin: 0, color: "var(--bright)", fontSize: 16 }}>{seasonReview.review.verdict}</p>
-            )}
-            {seasonReview.review.body_spoiler_free && (
-              <div
-                className="prose"
-                style={{ fontSize: 17.5 }}
-                dangerouslySetInnerHTML={{ __html: renderMarkdown(seasonReview.review.body_spoiler_free) }}
-              />
-            )}
+          {seasonReview && (
+            <Reveal>
+              <section className="verdict-card col" style={{ padding: "28px 30px", gap: 12 }}>
+                <span className="label">Season verdict</span>
+                {seasonReview.review.verdict && <p className="verdict-text">{seasonReview.review.verdict}</p>}
+                {seasonReview.review.body_spoiler_free && (
+                  <div
+                    className="prose"
+                    style={{ marginTop: 6 }}
+                    dangerouslySetInnerHTML={{ __html: renderMarkdown(seasonReview.review.body_spoiler_free) }}
+                  />
+                )}
+              </section>
+            </Reveal>
+          )}
+
+          {spoilerHtml && <SpoilerZone html={spoilerHtml} />}
+
+          {seasonReview && likes && (
+            <LikeButton reviewId={seasonReview.review.id} initialCount={likes.count} initialLiked={likes.liked} />
+          )}
+        </div>
+
+        <aside className="review-side col" style={{ gap: 20 }}>
+          <section className="gl col" style={{ padding: "26px 24px", gap: 16, alignItems: "center", textAlign: "center" }}>
+            <span className="label" style={{ alignSelf: "flex-start" }}>Season score</span>
+            <Score
+              score={seasonReview?.score ?? null}
+              emoji={seasonReview?.emoji ?? null}
+              variant="verdict"
+              empty="dash"
+            />
           </section>
-        </Reveal>
-      )}
-
-      <SubScoreBars subScores={subScores} />
-      {spoilerHtml && <SpoilerZone html={spoilerHtml} />}
+          <SubScoreBars subScores={subScores} />
+        </aside>
+      </div>
     </div>
   );
 }

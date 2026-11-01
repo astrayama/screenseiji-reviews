@@ -108,13 +108,16 @@ export function SearchOverlay({ onClose }: { onClose: () => void }) {
         <div
           className="row"
           style={{
-            border: "1.5px solid var(--amber)",
+            border: "1px solid color-mix(in srgb, var(--amber) 45%, var(--line))",
             borderRadius: 999,
-            padding: "9px 16px",
-            background: "rgba(255,217,168,.06)",
+            padding: "12px 18px",
+            background: "var(--bg-2)",
           }}
         >
-          <span style={{ color: "var(--amber)" }}>⌕</span>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--amber)" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
+            <circle cx="11" cy="11" r="7" />
+            <path d="m20 20-3.5-3.5" />
+          </svg>
           <input
             ref={inputRef}
             value={q}
@@ -123,11 +126,11 @@ export function SearchOverlay({ onClose }: { onClose: () => void }) {
             style={{
               all: "unset",
               flex: 1,
-              font: "500 14px var(--mono)",
+              font: "500 15px var(--sans)",
               color: "var(--bright)",
             }}
           />
-          <span className="mono-note" style={{ color: "var(--ghost)", fontSize: 10 }}>
+          <span className="mono-note" style={{ color: "var(--faint)", fontSize: 12 }}>
             ESC to close
           </span>
         </div>
@@ -148,7 +151,7 @@ export function SearchOverlay({ onClose }: { onClose: () => void }) {
                     >
                       ◆
                     </span>
-                    <b style={{ color: "var(--bright)", fontSize: 14 }}>{f.franchise.name}</b>
+                    <b style={{ font: "700 15px var(--display)", color: "var(--bright)" }}>{f.franchise.name}</b>
                     <span className="chip" style={{ marginLeft: "auto" }}>
                       {f.count} review{f.count === 1 ? "" : "s"}
                     </span>
@@ -171,12 +174,12 @@ export function SearchOverlay({ onClose }: { onClose: () => void }) {
                             <img
                               src={h.title.poster_url}
                               alt=""
-                              style={{ width: 26, height: 38, objectFit: "cover", borderRadius: 4, flex: "none" }}
+                              style={{ width: 30, height: 44, objectFit: "cover", borderRadius: 8, flex: "none" }}
                             />
                           ) : (
-                            <span style={{ width: 26, height: 38, borderRadius: 4, background: "var(--panel)", flex: "none" }} />
+                            <span style={{ width: 30, height: 44, borderRadius: 8, background: "var(--panel-2)", flex: "none" }} />
                           )}
-                          <b style={{ color: "var(--bright)", fontSize: 14 }}>{h.title.name}</b>
+                          <b style={{ font: "700 15px var(--display)", color: "var(--bright)" }}>{h.title.name}</b>
                           {h.title.year && <span className="chip">{h.title.year}</span>}
                           {[...splitTags(h.tags).moods, ...splitTags(h.tags).genres]
                             .slice(0, 2)
@@ -184,7 +187,7 @@ export function SearchOverlay({ onClose }: { onClose: () => void }) {
                               <span
                                 key={t.id}
                                 className={`chip chip--tag${t.kind === "mood" ? " chip--mood" : ""}`}
-                                style={{ ["--c" as string]: t.color, fontSize: 9, padding: "2px 8px" }}
+                                style={{ ["--c" as string]: t.color, fontSize: 11, padding: "2px 9px" }}
                               >
                                 {t.name}
                               </span>
