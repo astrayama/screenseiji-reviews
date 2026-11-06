@@ -400,7 +400,9 @@ function ReviewEditor({
   onChanged: () => Promise<void>;
 }) {
   const [review, setReview] = useState<DeskReview | null>(null);
-  const [subScores, setSubScores] = useState<{ category_id: string; score: number }[]>([]);
+  // scores held as typed, like form.score — a number would eat the "." of "7."
+  // before the next digit arrived, so decimals couldn't be entered
+  const [subScores, setSubScores] = useState<{ category_id: string; score: string }[]>([]);
   const [form, setForm] = useState({ score: "", emoji: "", verdict: "", pull_quote: "", body_spoiler_free: "", body_spoilers: "" });
   const [publishAt, setPublishAt] = useState("");
   const [status, setStatus] = useState("");
@@ -418,7 +420,7 @@ function ReviewEditor({
         `/api/desk/reviews?id=${r.id}`
       );
       setReview(full);
-      setSubScores(subs.map((s) => ({ category_id: s.category_id, score: Number(s.score) })));
+      setSubScores(subs.map((s) => ({ category_id: s.category_id, score: String(s.score) })));
       setForm({
         score: full.score !== null ? String(full.score) : "",
         emoji: full.emoji ?? "",
@@ -449,7 +451,10 @@ function ReviewEditor({
       pull_quote: form.pull_quote || null,
       body_spoiler_free: form.body_spoiler_free || null,
       body_spoilers: form.body_spoilers || null,
-      subScores,
+      subScores: subScores.map((s) => ({
+        category_id: s.category_id,
+        score: Math.min(10, Math.max(0, Number(s.score) || 0)),
+      })),
     };
   }
 
@@ -617,7 +622,7 @@ function ReviewEditor({
                 style={{ width: 80 }}
                 value={s.score}
                 onChange={(e) => {
-                  const v = Math.min(10, Math.max(0, Number(e.target.value.replace(/[^\d.]/g, "")) || 0));
+                  const v = e.target.value.replace(/[^\d.]/g, "");
                   setSubScores(subScores.map((x) => (x.category_id === s.category_id ? { ...x, score: v } : x)));
                 }}
               />
@@ -639,7 +644,7 @@ function ReviewEditor({
                 key={c.id}
                 className="chip"
                 style={{ cursor: "pointer", background: "none" }}
-                onClick={() => setSubScores([...subScores, { category_id: c.id, score: 7 }])}
+                onClick={() => setSubScores([...subScores, { category_id: c.id, score: "7" }])}
               >
                 ＋ {c.name}
               </button>

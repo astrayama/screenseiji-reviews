@@ -45,40 +45,45 @@ export default async function SeriesPage({ params }: Props) {
   }));
 
   return (
-    <div className="wrap col" style={{ gap: 24, maxWidth: 820 }}>
-      <nav className="crumb" aria-label="Breadcrumb">
-        <Link href="/archive?type=series">Series</Link> → {title.name}
-      </nav>
+    <div className="wrap col" style={{ gap: 36 }}>
+      <div className="col" style={{ gap: 28 }}>
+        <nav className="crumb" aria-label="Breadcrumb">
+          <Link href="/archive?type=series">Series</Link> › {title.name}
+        </nav>
 
-      <header className="row" style={{ gap: 20, alignItems: "flex-start" }}>
-        <div style={{ width: 120, flex: "none" }}>
-          <PosterImg src={title.poster_url} alt={title.name} />
-        </div>
-        <div className="col" style={{ gap: 9, flex: 1 }}>
-          <h1 className="ttl" style={{ fontSize: "clamp(28px, 4.5vw, 40px)" }}>{title.name}</h1>
-          <TagRows tags={tags} />
-          <div className="row" style={{ flexWrap: "wrap", gap: 6 }}>
-            <span className="chip">
-              {seasons.length} season{seasons.length === 1 ? "" : "s"}
-            </span>
-            {title.status_text && <span className="chip">{title.status_text}</span>}
+        <header className="page-head">
+          <div className="poster-col">
+            <PosterImg src={title.poster_url} alt={title.name} />
           </div>
-          {title.synopsis && (
-            <p style={{ margin: 0, color: "var(--muted)", fontSize: 14.5 }}>{title.synopsis}</p>
-          )}
-          {average !== null && (
-            <div className="row">
-              <span className="sc">{average.toFixed(1)}</span>
-              <span className="mono-note" style={{ fontSize: 10 }}>series avg</span>
+          <div className="col" style={{ gap: 14, flex: 1, minWidth: 0 }}>
+            <span className="label">Series</span>
+            <h1 className="ttl" style={{ fontSize: "clamp(34px, 5vw, 52px)" }}>{title.name}</h1>
+            <div className="meta-line">
+              <span>
+                {seasons.length} season{seasons.length === 1 ? "" : "s"}
+              </span>
+              {title.status_text && <span>{title.status_text}</span>}
             </div>
-          )}
-        </div>
-      </header>
+            {title.synopsis && (
+              <p style={{ margin: 0, color: "var(--text)", fontSize: 16, maxWidth: 640 }}>{title.synopsis}</p>
+            )}
+            <TagRows tags={tags} />
+            {average !== null && (
+              <div className="row">
+                <span className="sc">{average.toFixed(1)}</span>
+                <span className="mono-note">series avg</span>
+              </div>
+            )}
+          </div>
+        </header>
+      </div>
 
       <hr className="hr" />
 
       {rows.length ? (
-        <SeasonAccordion seasons={rows} />
+        <div style={{ maxWidth: 880 }}>
+          <SeasonAccordion seasons={rows} />
+        </div>
       ) : (
         <div className="empty">
           <p className="mono-note" style={{ margin: 0 }}>no seasons on record yet</p>

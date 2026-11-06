@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { headers } from "next/headers";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { getEpisodePage, episodeHref, episodeTitle, seasonHref } from "@/lib/queries";
@@ -12,6 +13,8 @@ import { SpoilerZone } from "@/components/SpoilerZone";
 import { NewsletterBar } from "@/components/NewsletterBar";
 import { MiniScore } from "@/components/MiniScore";
 import { Reveal } from "@/components/Reveal";
+import { LikeButton } from "@/components/LikeButton";
+import { getLikeState, voterFromHeaders } from "@/lib/likes";
 
 export const dynamic = "force-dynamic";
 
@@ -53,6 +56,7 @@ export default async function EpisodePage({ params }: Props) {
   const bodyHtml = renderMarkdown(review.body_spoiler_free);
   const spoilerHtml = review.body_spoilers ? renderMarkdown(review.body_spoilers) : null;
   const base = process.env.SITE_URL ?? "";
+  const likes = await getLikeState(review.id, voterFromHeaders(await headers()));
 
   const jsonLd = {
     "@context": "https://schema.org",
@@ -88,113 +92,114 @@ export default async function EpisodePage({ params }: Props) {
   };
 
   return (
-    <article className="wrap col" style={{ gap: 22, maxWidth: 780 }}>
+    <article className="wrap col" style={{ gap: 36 }}>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbLd) }} />
       {(card.score !== null || card.emoji) && (
         <MiniScore score={card.score} emoji={card.emoji} name={label} />
       )}
 
-      <nav className="crumb" aria-label="Breadcrumb">
-        <Link href="/archive?type=series">Series</Link> →{" "}
-        <Link href={`/series/${title.slug}`}>{title.name}</Link> →{" "}
-        <Link href={seasonHref(title.slug, season.number)}>Season {season.number}</Link> → {label}
-      </nav>
-
-      <header className="row" style={{ gap: 18, alignItems: "flex-start" }}>
-        <div style={{ width: 92, flex: "none" }}>
-          <PosterImg src={season.poster_url ?? title.poster_url} alt={title.name} />
-        </div>
-        <div className="col" style={{ gap: 9, flex: 1 }}>
-          <Link href={`/series/${title.slug}`} className="mono-note" style={{ fontSize: 12 }}>
-            {title.name} · Season {season.number}
-          </Link>
-          <h1 className="ttl" style={{ fontSize: "clamp(26px, 4vw, 38px)" }}>
-            <span style={{ fontSize: "0.5em" }}>{label}</span> {name}
-          </h1>
-          <TagRows tags={series.tags} />
-          <div className="row" style={{ flexWrap: "wrap", gap: 6 }}>
-            {isPeak && (
-              <span className="chip chip--tag" style={{ ["--c" as string]: "var(--amber)" }}>
-                season peak
-              </span>
-            )}
-            {review.published_at && <span className="chip">{fmtDate(review.published_at)}</span>}
-          </div>
-        </div>
-      </header>
-
-      <section
-        id="verdict-box"
-        className="gl gl--amber row between"
-        style={{
-          padding: 20,
-          gap: 20,
-          background: "linear-gradient(115deg, rgba(255,217,168,.08), rgba(255,184,217,.06))",
-        }}
-      >
-        <div className="col" style={{ gap: 6, flex: 1 }}>
-          <span className="label label--amber">The verdict</span>
-          {review.verdict && (
-            <p style={{ margin: 0, color: "var(--bright)", fontSize: 16.5, lineHeight: 1.5 }}>
-              {review.verdict}
-            </p>
-          )}
-        </div>
-        {(card.score !== null || card.emoji) && (
-          <div className="col" style={{ alignItems: "center", gap: 2, flex: "none" }}>
-            <Score score={card.score} emoji={card.emoji} variant="verdict" countUp />
-          </div>
-        )}
-      </section>
-
-      <Reveal>
-        <SubScoreBars subScores={subScores} />
-      </Reveal>
-
-      {/* a pull quote can stand on its own — it used to be hidden whenever
-          there was no spoiler-free body to wrap it */}
-      {(bodyHtml || review.pull_quote) && (
-        <section className="col" style={{ gap: 8 }}>
-          {bodyHtml && <span className="label">Spoiler-free</span>}
-          {bodyHtml && <div className="prose" dangerouslySetInnerHTML={{ __html: bodyHtml }} />}
-          {review.pull_quote && <div className="pull-quote">{review.pull_quote}</div>}
-        </section>
-      )}
-
-      {spoilerHtml && <SpoilerZone html={spoilerHtml} />}
-
-      {/* nearest reviewed episodes on either side */}
-      {(prev || next) && (
-        <nav className="row between" style={{ gap: 12, marginTop: 6 }} aria-label="Episodes">
-          {prev ? (
-            <Link
-              className="chip"
-              href={episodeHref(title.slug, season.number, prev.number)}
-              style={{ maxWidth: "48%" }}
-            >
-              ‹ E{prev.number} {prev.name}
-            </Link>
-          ) : (
-            <span />
-          )}
-          {next ? (
-            <Link
-              className="chip"
-              href={episodeHref(title.slug, season.number, next.number)}
-              style={{ maxWidth: "48%" }}
-            >
-              E{next.number} {next.name} ›
-            </Link>
-          ) : (
-            <span />
-          )}
+      <div className="col" style={{ gap: 28 }}>
+        <nav className="crumb" aria-label="Breadcrumb">
+          <Link href="/archive?type=series">Series</Link> ›{" "}
+          <Link href={`/series/${title.slug}`}>{title.name}</Link> ›{" "}
+          <Link href={seasonHref(title.slug, season.number)}>Season {season.number}</Link> › {label}
         </nav>
-      )}
 
-      <Link className="mono-note" href={seasonHref(title.slug, season.number)}>
-        ← all of Season {season.number}
-      </Link>
+        <header className="page-head">
+          <div className="poster-col">
+            <PosterImg src={season.poster_url ?? title.poster_url} alt={title.name} />
+          </div>
+          <div className="col" style={{ gap: 14, flex: 1, minWidth: 0 }}>
+            <Link href={`/series/${title.slug}`} className="label">
+              {title.name} · Season {season.number}
+            </Link>
+            <h1 className="ttl" style={{ fontSize: "clamp(30px, 4.5vw, 46px)" }}>
+              <span style={{ fontSize: "0.5em", color: "var(--amber)" }}>{label}</span> {name}
+            </h1>
+            {(isPeak || review.published_at) && (
+              <div className="row" style={{ flexWrap: "wrap", gap: 12 }}>
+                {isPeak && (
+                  <span className="chip chip--tag chip--mood" style={{ ["--c" as string]: "var(--amber)" }}>
+                    ✦ season peak
+                  </span>
+                )}
+                {review.published_at && <span className="meta-line">{fmtDate(review.published_at)}</span>}
+              </div>
+            )}
+            <TagRows tags={series.tags} />
+          </div>
+        </header>
+      </div>
+
+      <hr className="hr" />
+
+      <div className="review-grid">
+        <div className="review-main col" style={{ gap: 36 }}>
+          <section id="verdict-box" className="verdict-card col" style={{ padding: "28px 30px", gap: 12 }}>
+            <span className="label">The verdict</span>
+            {review.verdict && <p className="verdict-text">{review.verdict}</p>}
+          </section>
+
+          {/* a pull quote can stand on its own — it used to be hidden whenever
+              there was no spoiler-free body to wrap it */}
+          {(bodyHtml || review.pull_quote) && (
+            <section className="col" style={{ gap: 14 }}>
+              {bodyHtml && <span className="label">Spoiler-free</span>}
+              {bodyHtml && <div className="prose" dangerouslySetInnerHTML={{ __html: bodyHtml }} />}
+              {review.pull_quote && <div className="pull-quote">{review.pull_quote}</div>}
+            </section>
+          )}
+
+          {spoilerHtml && <SpoilerZone html={spoilerHtml} />}
+
+          <LikeButton reviewId={review.id} initialCount={likes.count} initialLiked={likes.liked} />
+
+          {/* nearest reviewed episodes on either side */}
+          {(prev || next) && (
+            <nav className="row between" style={{ gap: 12 }} aria-label="Episodes">
+              {prev ? (
+                <Link
+                  className="btn"
+                  href={episodeHref(title.slug, season.number, prev.number)}
+                  style={{ maxWidth: "48%", whiteSpace: "normal" }}
+                >
+                  ‹ E{prev.number} {prev.name}
+                </Link>
+              ) : (
+                <span />
+              )}
+              {next ? (
+                <Link
+                  className="btn"
+                  href={episodeHref(title.slug, season.number, next.number)}
+                  style={{ maxWidth: "48%", whiteSpace: "normal" }}
+                >
+                  E{next.number} {next.name} ›
+                </Link>
+              ) : (
+                <span />
+              )}
+            </nav>
+          )}
+
+          <Link className="mono-note" href={seasonHref(title.slug, season.number)}>
+            ← all of Season {season.number}
+          </Link>
+        </div>
+
+        <aside className="review-side col" style={{ gap: 20 }}>
+          {(card.score !== null || card.emoji) && (
+            <section className="gl col" style={{ padding: "26px 24px", gap: 16, alignItems: "center", textAlign: "center" }}>
+              <span className="label" style={{ alignSelf: "flex-start" }}>The score</span>
+              <Score score={card.score} emoji={card.emoji} variant="verdict" countUp />
+            </section>
+          )}
+          <Reveal>
+            <SubScoreBars subScores={subScores} />
+          </Reveal>
+        </aside>
+      </div>
 
       <Reveal>
         <NewsletterBar />

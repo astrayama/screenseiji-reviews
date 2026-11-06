@@ -15,67 +15,85 @@ export default async function HomePage() {
   const { featured, fresh, ticker, moods, rail, total } = await getHomeData();
 
   return (
-    <div className="wrap col" style={{ gap: 30 }}>
+    <div className="wrap col" style={{ gap: 64 }}>
       {/* hero + now-reviewing rail */}
       <section
         style={{
           display: "grid",
-          gridTemplateColumns: "1.6fr 1fr",
-          gap: 14,
+          gridTemplateColumns: "1.75fr 1fr",
+          gap: 24,
           alignItems: "stretch",
         }}
         className="hero-grid"
       >
         {featured ? (
-          <div className="hero col" style={{ padding: 24, gap: 10 }}>
+          <div className="hero hero--feature col" style={{ gap: 16 }}>
+            {featured.posterUrl && (
+              <div
+                className="hero-art"
+                aria-hidden="true"
+                style={{ backgroundImage: `url(${JSON.stringify(featured.posterUrl)})` }}
+              />
+            )}
             <Link
               href={featured.href}
               className="hero-cover"
               aria-label={`Read the ${featured.displayName} review`}
             />
-            <span className="label" style={{ color: "var(--amber)" }}>✦ Featured pick</span>
-            <h1 className="ttl" style={{ fontSize: "clamp(30px, 5vw, 44px)" }}>
+            <span className="label">✦ Featured pick</span>
+            <h1 className="ttl" style={{ fontSize: "clamp(30px, 5vw, 60px)", maxWidth: 560 }}>
               {featured.displayName}{" "}
               {featured.rootTitle.year && (
-                <span style={{ fontSize: "0.55em" }}>({featured.rootTitle.year})</span>
+                <span style={{ fontSize: "0.5em", color: "var(--muted)", fontWeight: 700 }}>
+                  ({featured.rootTitle.year})
+                </span>
               )}
             </h1>
+            {featured.verdict && (
+              <p style={{ margin: 0, color: "var(--text)", maxWidth: 480, fontSize: 16.5, lineHeight: 1.6 }}>
+                {featured.verdict}
+              </p>
+            )}
             {/* moods lead, and their fill sets them apart from the genres */}
-            <div className="row" style={{ flexWrap: "wrap", gap: 6 }}>
+            <div className="row" style={{ flexWrap: "wrap", gap: 8, maxWidth: 520 }}>
               {[...splitTags(featured.tags).moods, ...splitTags(featured.tags).genres].map((t) => (
                 <TagChip key={t.id} tag={t} />
               ))}
             </div>
-            {featured.verdict && (
-              <p style={{ margin: 0, color: "rgba(234,230,255,.9)", maxWidth: 520, fontSize: 16 }}>
-                {featured.verdict}
-              </p>
-            )}
-            <div className="row between" style={{ marginTop: "auto", paddingTop: 10 }}>
-              <span className="mono-note">read the review →</span>
-              <Score score={featured.score} emoji={featured.emoji} variant="pill" />
+            <div className="row between" style={{ marginTop: "auto", paddingTop: 18, alignItems: "flex-end", gap: 16 }}>
+              <span className="btn btn--amber">
+                read the review <span aria-hidden="true">→</span>
+              </span>
+              {(featured.score !== null || featured.emoji) && (
+                <div className="hero-score">
+                  <Score score={featured.score} emoji={featured.emoji} variant="verdict" />
+                </div>
+              )}
             </div>
           </div>
         ) : (
-          <div className="hero col empty" style={{ padding: 34, justifyContent: "center", border: "1px solid rgba(255,217,168,.4)" }}>
-            <h1 className="ttl" style={{ fontSize: 30 }}>The screen is still dark.</h1>
+          <div className="hero col empty" style={{ padding: 44, justifyContent: "center", minHeight: 460 }}>
+            <h1 className="ttl" style={{ fontSize: 36 }}>The screen is still dark.</h1>
             <p className="mono-note">the first review is being written — check back soon</p>
           </div>
         )}
 
-        <aside className="gl col" style={{ padding: 16, gap: 12 }}>
-          <span className="label">Now reviewing</span>
+        <aside className="gl col" style={{ padding: 28, gap: 6 }}>
+          <h2 className="sec-title" style={{ fontSize: 22, marginBottom: 10 }}>Now reviewing</h2>
           {rail.length ? (
-            rail.map((item) => (
-              <div className="row" key={item.id} style={{ alignItems: "flex-start" }}>
-                <div style={{ width: 34, flex: "none" }}>
+            rail.map((item, i) => (
+              <div className="row" key={item.id} style={{ gap: 16, padding: "10px 0" }}>
+                <span style={{ width: 20, flex: "none", fontSize: 13, color: "var(--faint)" }}>
+                  {String(i + 1).padStart(2, "0")}
+                </span>
+                <div style={{ width: 44, flex: "none" }}>
                   <PosterImg src={item.title?.poster_url} alt="" />
                 </div>
-                <div className="col" style={{ gap: 2, minWidth: 0 }}>
-                  <b style={{ color: "var(--bright)", fontSize: 13.5, lineHeight: 1.25 }}>
+                <div className="col" style={{ gap: 3, minWidth: 0 }}>
+                  <b style={{ font: "700 15px/1.3 var(--display)", color: "var(--bright)" }}>
                     {item.title?.name ?? item.display_name}
                   </b>
-                  {item.note && <span className="mono-note" style={{ fontSize: 10.5 }}>{item.note}</span>}
+                  {item.note && <span className="mono-note">{item.note}</span>}
                 </div>
               </div>
             ))
@@ -90,11 +108,9 @@ export default async function HomePage() {
       {/* browse by mood */}
       {moods.length > 0 && (
         <Reveal>
-          <section className="col" style={{ gap: 10 }}>
-            <div className="row between">
-              <h2 style={{ margin: 0, font: "600 15px var(--sans)", color: "var(--bright)" }}>
-                Browse by mood
-              </h2>
+          <section className="gl row between" style={{ padding: "24px 28px", gap: 20, flexWrap: "wrap" }}>
+            <div className="col" style={{ gap: 4 }}>
+              <h2 className="sec-title" style={{ fontSize: 22 }}>Browse by mood</h2>
               <Link className="mono-note" href="/moods">all moods →</Link>
             </div>
             <div className="row" style={{ flexWrap: "wrap", gap: 8 }}>
@@ -115,38 +131,33 @@ export default async function HomePage() {
       {/* fresh takes */}
       {(fresh.length > 0 || total === 0) && (
       <Reveal delay={120}>
-        <section className="col" style={{ gap: 12 }}>
-          <h2 style={{ margin: 0, font: "600 15px var(--sans)", color: "var(--bright)" }}>
-            Fresh takes
-          </h2>
+        <section className="col" style={{ gap: 24 }}>
+          <h2 className="sec-title">Fresh takes</h2>
           {fresh.length ? (
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(170px, 1fr))", gap: 14 }}>
-              {fresh.map((c, i) => {
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))", gap: "32px 20px" }}>
+              {fresh.map((c) => {
                 const { moods, genres } = splitTags(c.tags);
                 /* one of each kind, so a mood is never crowded out by two
                    genres. Spans, not links — the whole card is already one. */
                 const chips = [...moods.slice(0, 1), ...genres.slice(0, 1)];
                 return (
-                <Link
-                  key={c.review.id}
-                  href={c.href}
-                  className={`tiltable col ${["gl--amber", "gl--pink", "gl--sky"][i % 3]} gl`}
-                  style={{ padding: 10, gap: 8 }}
-                >
-                  <PosterImg src={c.posterUrl} alt={c.displayName} />
-                  <b style={{ color: "var(--bright)", fontSize: 14, lineHeight: 1.3 }}>{c.displayName}</b>
-                  <div className="row" style={{ flexWrap: "wrap", gap: 4 }}>
+                <Link key={c.review.id} href={c.href} className="tiltable col" style={{ gap: 12 }}>
+                  <div className="poster-frame">
+                    <PosterImg src={c.posterUrl} alt={c.displayName} />
+                    <Score score={c.score} emoji={c.emoji} variant="pill" />
+                  </div>
+                  <b style={{ font: "700 18px/1.25 var(--display)", color: "var(--bright)" }}>{c.displayName}</b>
+                  <div className="row" style={{ flexWrap: "wrap", gap: 6 }}>
                     {chips.map((t) => (
                       <span
                         key={t.id}
                         className={`chip chip--tag${t.kind === "mood" ? " chip--mood" : ""}`}
-                        style={{ ["--c" as string]: t.color, fontSize: 9, padding: "2px 8px" }}
+                        style={{ ["--c" as string]: t.color, fontSize: 12, padding: "4px 10px" }}
                       >
                         {t.name}
                       </span>
                     ))}
                   </div>
-                  <Score score={c.score} emoji={c.emoji} variant="inline" />
                 </Link>
                 );
               })}

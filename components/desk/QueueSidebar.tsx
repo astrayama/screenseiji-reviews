@@ -13,6 +13,7 @@ type Stats = {
   topPaths: { path: string; count: number }[];
   total: number;
   subscribers: number;
+  likes: { total: number; byReview: Record<string, number> };
 };
 
 function resolveSubject(r: DeskReviewLite, titles: DeskTitle[]): { title: DeskTitle; subject: Subject; label: string } | null {
@@ -105,6 +106,10 @@ export function QueueSidebar({
               <span className="mono-note" style={{ fontSize: 10.5 }}>subscribers</span>
               <b style={{ font: "600 12px var(--mono)", color: "var(--amber)" }}>{stats.subscribers}</b>
             </div>
+            <div className="row between">
+              <span className="mono-note" style={{ fontSize: 10.5 }}>likes, all time</span>
+              <b style={{ font: "600 12px var(--mono)", color: "var(--amber)" }}>{stats.likes.total}</b>
+            </div>
             {stats.topPaths.slice(0, 4).map((p) => (
               <div className="row between" key={p.path}>
                 <span className="mono-note" style={{ fontSize: 10, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
@@ -134,6 +139,9 @@ export function QueueSidebar({
               </span>
               <span className="row" style={{ gap: 4, flex: "none" }}>
                 {r.featured && <span style={{ color: "var(--amber)", fontSize: 10 }}>✦</span>}
+                {stats?.likes.byReview[r.id] ? (
+                  <span className="mono-note" style={{ fontSize: 10.5 }}>♡ {stats.likes.byReview[r.id]}</span>
+                ) : null}
                 {r.score !== null && (
                   <b style={{ font: "600 11px var(--mono)", color: "var(--amber)" }}>{Number(r.score).toFixed(1)}</b>
                 )}

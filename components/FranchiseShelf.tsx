@@ -43,7 +43,7 @@ export function FranchiseShelf({ items }: { items: ShelfItem[] }) {
       <div className="shelf">
         {sorted.map((m) => {
           const inner = (
-            <div className="col" style={{ gap: 5 }}>
+            <div className="col" style={{ gap: 8 }}>
               {m.href ? (
                 <PosterImg src={m.posterUrl} alt={m.name} />
               ) : (
@@ -53,7 +53,7 @@ export function FranchiseShelf({ items }: { items: ShelfItem[] }) {
                   (unreviewed)
                 </div>
               )}
-              <b style={{ fontSize: 13, color: m.href ? "var(--bright)" : "var(--faint)" }}>{m.name}</b>
+              <b style={{ font: "700 15px/1.3 var(--display)", color: m.href ? "var(--bright)" : "var(--faint)" }}>{m.name}</b>
               <span className="row mono-note" style={{ fontSize: 10.5, gap: 5 }}>
                 {m.year ?? "—"} ·
                 <Score

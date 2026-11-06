@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { headers } from "next/headers";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { getFilmPage } from "@/lib/queries";
@@ -13,6 +14,8 @@ import { SpoilerZone } from "@/components/SpoilerZone";
 import { NewsletterBar } from "@/components/NewsletterBar";
 import { MiniScore } from "@/components/MiniScore";
 import { Reveal } from "@/components/Reveal";
+import { LikeButton } from "@/components/LikeButton";
+import { getLikeState, voterFromHeaders } from "@/lib/likes";
 
 export const dynamic = "force-dynamic";
 
@@ -41,6 +44,7 @@ export default async function FilmPage({ params }: Props) {
   const runtime = fmtRuntime(title.runtime_minutes);
   const franchise = title.franchise ?? null;
   const otherMembers = siblings.filter((s) => s.id !== title.id);
+  const likes = await getLikeState(review.id, voterFromHeaders(await headers()));
 
   const jsonLd = {
     "@context": "https://schema.org",
@@ -66,101 +70,105 @@ export default async function FilmPage({ params }: Props) {
   };
 
   return (
-    <article className="wrap col" style={{ gap: 22, maxWidth: 780 }}>
+    <article className="wrap col" style={{ gap: 36 }}>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbLd) }} />
       {(score !== null || emoji) && <MiniScore score={score} emoji={emoji} name={title.name} />}
 
-      <nav className="crumb" aria-label="Breadcrumb">
-        <Link href="/archive?type=film">Films</Link>
-        {franchise && (
-          <>
-            {" → "}
-            <Link href={`/franchises/${franchise.slug}`}>{franchise.name}</Link>
-          </>
-        )}
-        {" → "}
-        {title.name}
-      </nav>
+      <div className="col" style={{ gap: 28 }}>
+        <nav className="crumb" aria-label="Breadcrumb">
+          <Link href="/archive?type=film">Films</Link>
+          {franchise && (
+            <>
+              {" › "}
+              <Link href={`/franchises/${franchise.slug}`}>{franchise.name}</Link>
+            </>
+          )}
+          {" › "}
+          {title.name}
+        </nav>
 
-      <header className="row" style={{ gap: 20, alignItems: "flex-start" }}>
-        <div style={{ width: 110, flex: "none" }}>
-          <PosterImg src={title.poster_url} alt={title.name} />
-        </div>
-        <div className="col" style={{ gap: 12, flex: 1 }}>
-          <h1 className="ttl" style={{ fontSize: "clamp(32px, 5vw, 46px)" }}>
-            {title.name}{" "}
-            {title.year && <span style={{ fontSize: "0.55em" }}>({title.year})</span>}
-          </h1>
-          {/* tags first, right under the title */}
-          <TagRows tags={tags} />
-          <div className="row" style={{ flexWrap: "wrap", gap: 6 }}>
-            {runtime && <span className="chip">{runtime}</span>}
-            {review.published_at && <span className="chip">{fmtDate(review.published_at)}</span>}
+        <header className="page-head">
+          <div className="poster-col">
+            <PosterImg src={title.poster_url} alt={title.name} />
           </div>
-        </div>
-      </header>
+          <div className="col" style={{ gap: 14, flex: 1, minWidth: 0 }}>
+            <span className="label">Film review</span>
+            <h1 className="ttl" style={{ fontSize: "clamp(34px, 5vw, 52px)" }}>
+              {title.name}{" "}
+              {title.year && (
+                <span style={{ fontSize: "0.5em", color: "var(--muted)", fontWeight: 700 }}>({title.year})</span>
+              )}
+            </h1>
+            {(runtime || review.published_at) && (
+              <div className="meta-line">
+                {runtime && <span>{runtime}</span>}
+                {review.published_at && <span>{fmtDate(review.published_at)}</span>}
+              </div>
+            )}
+            {/* tags first, right under the title */}
+            <TagRows tags={tags} />
+          </div>
+        </header>
+      </div>
 
-      {/* the verdict */}
-      <section
-        id="verdict-box"
-        className="gl gl--amber row between"
-        style={{
-          padding: 20,
-          gap: 20,
-          background: "linear-gradient(115deg, rgba(255,217,168,.08), rgba(255,184,217,.06))",
-        }}
-      >
-        <div className="col" style={{ gap: 6, flex: 1 }}>
-          <span className="label label--amber">The verdict</span>
-          {review.verdict && (
-            <p style={{ margin: 0, color: "var(--bright)", fontSize: 16.5, lineHeight: 1.5 }}>
-              {review.verdict}
-            </p>
+      <hr className="hr" />
+
+      <div className="review-grid">
+        <div className="review-main col" style={{ gap: 36 }}>
+          {/* the verdict */}
+          <section id="verdict-box" className="verdict-card col" style={{ padding: "28px 30px", gap: 12 }}>
+            <span className="label">The verdict</span>
+            {review.verdict && <p className="verdict-text">{review.verdict}</p>}
+          </section>
+
+          {/* spoiler-free */}
+          {/* a pull quote can stand on its own — it used to be hidden whenever
+              there was no spoiler-free body to wrap it */}
+          {(spoilerFreeHtml || review.pull_quote) && (
+            <section className="col" style={{ gap: 14 }}>
+              {spoilerFreeHtml && <span className="label">Spoiler-free</span>}
+              {spoilerFreeHtml && <div className="prose" dangerouslySetInnerHTML={{ __html: spoilerFreeHtml }} />}
+              {review.pull_quote && <div className="pull-quote">{review.pull_quote}</div>}
+            </section>
+          )}
+
+          {spoilerHtml && <SpoilerZone html={spoilerHtml} />}
+
+          <LikeButton reviewId={review.id} initialCount={likes.count} initialLiked={likes.liked} />
+
+          {/* more from the franchise */}
+          {franchise && otherMembers.length > 0 && (
+            <Reveal>
+              <section className="col" style={{ gap: 16 }}>
+                <h2 className="sec-title" style={{ fontSize: 24 }}>More from {franchise.name}</h2>
+                <div className="row" style={{ gap: 16, alignItems: "flex-start", flexWrap: "wrap" }}>
+                  {otherMembers.slice(0, 4).map((m) => (
+                    <Link key={m.id} href={m.kind === "film" ? `/films/${m.slug}` : `/series/${m.slug}`} className="tiltable" style={{ width: 120 }}>
+                      <PosterImg src={m.poster_url} alt={m.name} />
+                    </Link>
+                  ))}
+                  <Link className="mono-note" href={`/franchises/${franchise.slug}`} style={{ alignSelf: "center" }}>
+                    → franchise hub
+                  </Link>
+                </div>
+              </section>
+            </Reveal>
           )}
         </div>
-        {(score !== null || emoji) && (
-          <div className="col" style={{ alignItems: "center", gap: 2, flex: "none" }}>
-            <Score score={score} emoji={emoji} variant="verdict" countUp />
-          </div>
-        )}
-      </section>
 
-      <Reveal>
-        <SubScoreBars subScores={subScores} />
-      </Reveal>
-
-      {/* spoiler-free */}
-      {/* a pull quote can stand on its own — it used to be hidden whenever
-          there was no spoiler-free body to wrap it */}
-      {(spoilerFreeHtml || review.pull_quote) && (
-        <section className="col" style={{ gap: 8 }}>
-          {spoilerFreeHtml && <span className="label">Spoiler-free</span>}
-          {spoilerFreeHtml && <div className="prose" dangerouslySetInnerHTML={{ __html: spoilerFreeHtml }} />}
-          {review.pull_quote && <div className="pull-quote">{review.pull_quote}</div>}
-        </section>
-      )}
-
-      {spoilerHtml && <SpoilerZone html={spoilerHtml} />}
-
-      {/* more from the franchise */}
-      {franchise && otherMembers.length > 0 && (
-        <Reveal>
-          <section className="col" style={{ gap: 10, marginTop: 12 }}>
-            <span className="label">More from {franchise.name}</span>
-            <div className="row" style={{ gap: 12, alignItems: "flex-start" }}>
-              {otherMembers.slice(0, 4).map((m) => (
-                <Link key={m.id} href={m.kind === "film" ? `/films/${m.slug}` : `/series/${m.slug}`} className="tiltable" style={{ width: 84 }}>
-                  <PosterImg src={m.poster_url} alt={m.name} />
-                </Link>
-              ))}
-              <Link className="mono-note" href={`/franchises/${franchise.slug}`} style={{ alignSelf: "center" }}>
-                → franchise hub
-              </Link>
-            </div>
-          </section>
-        </Reveal>
-      )}
+        <aside className="review-side col" style={{ gap: 20 }}>
+          {(score !== null || emoji) && (
+            <section className="gl col" style={{ padding: "26px 24px", gap: 16, alignItems: "center", textAlign: "center" }}>
+              <span className="label" style={{ alignSelf: "flex-start" }}>The score</span>
+              <Score score={score} emoji={emoji} variant="verdict" countUp />
+            </section>
+          )}
+          <Reveal>
+            <SubScoreBars subScores={subScores} />
+          </Reveal>
+        </aside>
+      </div>
 
       <Reveal>
         <NewsletterBar />

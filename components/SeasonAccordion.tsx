@@ -21,22 +21,22 @@ export function SeasonAccordion({ seasons }: { seasons: SeasonRowData[] }) {
   );
 
   return (
-    <div className="col" style={{ gap: 10 }}>
+    <div className="col" style={{ gap: 12 }}>
       {seasons.map((s) => {
         const isOpen = open === s.number;
         return (
           <div
             key={s.number}
             className={`gl${isOpen ? " gl--amber" : ""} col`}
-            style={{ padding: "12px 15px", gap: 10 }}
+            style={{ padding: "18px 22px", gap: 16 }}
           >
             <button
               onClick={() => setOpen(isOpen ? null : s.number)}
               style={{ all: "unset", cursor: "pointer", display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10 }}
               aria-expanded={isOpen}
             >
-              <span className="row">
-                <b style={{ color: "var(--bright)", fontSize: 15 }}>Season {s.number}</b>
+              <span className="row" style={{ gap: 12, flexWrap: "wrap", minWidth: 0 }}>
+                <b style={{ font: "800 18px var(--display)", color: "var(--bright)" }}>Season {s.number}</b>
                 {s.episodeCount ? <span className="chip">{s.episodeCount} eps</span> : null}
                 {s.reviewingNow && (
                   <span className="chip chip--tag" style={{ ["--c" as string]: "var(--pink)" }}>
