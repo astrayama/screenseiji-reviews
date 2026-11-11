@@ -7,7 +7,7 @@ import { QueueSidebar } from "./QueueSidebar";
 import { Poster, UploadPoster } from "./shared";
 import { EmojiPicker } from "./EmojiPicker";
 import { Score } from "../Score";
-import { TAG_COLORS } from "@/lib/util";
+import { TAG_COLORS, readScore, typeScore } from "@/lib/util";
 
 type Subject =
   | { kind: "title"; id: string }
@@ -445,21 +445,26 @@ function ReviewEditor({
 
   function fieldPayload() {
     return {
-      score: form.score === "" ? null : Math.min(10, Math.max(0, Number(form.score))),
+      score: readScore(form.score),
       emoji: form.emoji || null,
       verdict: form.verdict || null,
       pull_quote: form.pull_quote || null,
       body_spoiler_free: form.body_spoiler_free || null,
       body_spoilers: form.body_spoilers || null,
-      subScores: subScores.map((s) => ({
-        category_id: s.category_id,
-        score: Math.min(10, Math.max(0, Number(s.score) || 0)),
-      })),
+      // save() has already stopped on a blank box, so every score reads
+      subScores: subScores.map((s) => ({ category_id: s.category_id, score: readScore(s.score) })),
     };
   }
 
   async function save(action?: string) {
     if (!review) return;
+    // a cleared box used to save as 0; ask instead
+    const blank = subScores.find((s) => readScore(s.score) === null);
+    if (blank) {
+      const name = categories.find((c) => c.id === blank.category_id)?.name ?? "A sub-score";
+      setStatus(`${name} has no score — type one, or ✕ it`);
+      return;
+    }
     setSaving(true);
     setStatus("");
     try {
@@ -587,8 +592,9 @@ function ReviewEditor({
             className="input"
             style={{ width: 80 }}
             placeholder="0–10"
+            inputMode="decimal"
             value={form.score}
-            onChange={(e) => setForm({ ...form, score: e.target.value.replace(/[^\d.]/g, "") })}
+            onChange={(e) => setForm({ ...form, score: typeScore(e.target.value) })}
           />
           <EmojiPicker
             value={form.emoji || null}
@@ -599,7 +605,7 @@ function ReviewEditor({
         <div className="row gl" style={{ padding: "8px 12px", gap: 12, alignSelf: "flex-start" }}>
           <span className="mono-note" style={{ fontSize: 10 }}>on the site:</span>
           <Score
-            score={form.score === "" ? null : Number(form.score)}
+            score={readScore(form.score)}
             emoji={form.emoji || null}
             variant="verdict"
             empty="dash"
@@ -620,9 +626,11 @@ function ReviewEditor({
               <input
                 className="input"
                 style={{ width: 80 }}
+                placeholder="0–10"
+                inputMode="decimal"
                 value={s.score}
                 onChange={(e) => {
-                  const v = e.target.value.replace(/[^\d.]/g, "");
+                  const v = typeScore(e.target.value);
                   setSubScores(subScores.map((x) => (x.category_id === s.category_id ? { ...x, score: v } : x)));
                 }}
               />

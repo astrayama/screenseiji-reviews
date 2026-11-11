@@ -43,6 +43,33 @@ export function DeskApp() {
     })();
   }, [reload]);
 
+  // An open Desk keeps the code it was loaded with, so a fix that's already
+  // live can stay hidden behind an old tab. Notice a newer deploy and offer a
+  // reload (never force one — there may be unsaved writing).
+  const [outdated, setOutdated] = useState(false);
+  useEffect(() => {
+    let loadedWith: string | null | undefined;
+    async function check() {
+      try {
+        const { version } = await api<{ version: string | null }>("/api/desk/version");
+        if (loadedWith === undefined) loadedWith = version;
+        else if (loadedWith && version && version !== loadedWith) setOutdated(true);
+      } catch {
+        // offline or signed out — try again next time
+      }
+    }
+    function onVisible() {
+      if (document.visibilityState === "visible") check();
+    }
+    check();
+    document.addEventListener("visibilitychange", onVisible);
+    const timer = setInterval(check, 5 * 60_000);
+    return () => {
+      document.removeEventListener("visibilitychange", onVisible);
+      clearInterval(timer);
+    };
+  }, []);
+
   const router = useRouter();
   async function logout() {
     await fetch("/api/desk/logout", { method: "POST" });
@@ -82,6 +109,15 @@ export function DeskApp() {
           </button>
         ))}
       </nav>
+
+      {outdated && (
+        <p className="mono-note" style={{ color: "var(--amber)" }}>
+          the Desk has been updated since you opened it — save what you&apos;re writing, then{" "}
+          <button className="chip" style={{ cursor: "pointer" }} onClick={() => window.location.reload()}>
+            reload
+          </button>
+        </p>
+      )}
 
       {error && (
         <p className="mono-note" style={{ color: "var(--pink)" }}>
