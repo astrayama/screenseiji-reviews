@@ -14,6 +14,25 @@ export function fmtScore(score: number | string | null | undefined): string {
   return Number(score).toFixed(1);
 }
 
+/* What a Desk score box keeps as you type. A comma becomes a point (some
+   keyboards and phone number pads type "4,5"), a second point is ignored
+   rather than turning "7.5." into something unreadable, and only one digit
+   follows the point, since the database keeps one decimal. */
+export function typeScore(raw: string): string {
+  const s = raw.replace(/,/g, ".").replace(/[^\d.]/g, "");
+  const dot = s.indexOf(".");
+  if (dot === -1) return s;
+  return s.slice(0, dot + 1) + s.slice(dot + 1).replace(/\./g, "").slice(0, 1);
+}
+
+/* A typed score as the number to save: null when there's nothing to read
+   ("" or a lone "."), otherwise held to 0–10 at one decimal. */
+export function readScore(text: string): number | null {
+  const n = parseFloat(text);
+  if (!Number.isFinite(n)) return null;
+  return Math.round(Math.min(10, Math.max(0, n)) * 10) / 10;
+}
+
 export function fmtRuntime(minutes: number | null | undefined): string | null {
   if (!minutes) return null;
   const h = Math.floor(minutes / 60);
